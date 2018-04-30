@@ -37,7 +37,7 @@ nod_net.load_state_dict(checkpoint['state_dict'])
 
 torch.cuda.set_device(0)
 nod_net = nod_net.cuda()
-cudnn.benchmark = True
+#cudnn.benchmark = True
 nod_net = DataParallel(nod_net)
 
 bbox_result_path = './bbox_result'
@@ -46,19 +46,25 @@ if not os.path.exists(bbox_result_path):
 #testsplit = [f.split('_clean')[0] for f in os.listdir(prep_result_path) if '_clean' in f]
 
 if not skip_detect:
+    print "Detecting..."
     margin = 32
-    sidelen = 144
+    #sidelen = 144   <- original value
+
+    # Values to save GPU memory, still will require 8*4 GB of GPU mem for 96
+    #sidelen = 80
+    sidelen = 96
     config1['datadir'] = prep_result_path
     split_comber = SplitComb(sidelen,config1['max_stride'],config1['stride'],margin,pad_value= config1['pad_value'])
 
     dataset = DataBowl3Detector(testsplit,config1,phase='test',split_comber=split_comber)
     test_loader = DataLoader(dataset,batch_size = 1,
-        shuffle = False,num_workers = 32,pin_memory=False,collate_fn =collate)
+        shuffle = False,num_workers = 0,pin_memory=False,collate_fn =collate)
 
     test_detect(test_loader, nod_net, get_pbb, bbox_result_path,config1,n_gpu=config_submit['n_gpu'])
 
     
 
+print "Applying case model..."
 
 casemodel = import_module(config_submit['classifier_model'].split('.py')[0])
 casenet = casemodel.CaseNet(topk=5)
@@ -74,13 +80,12 @@ casenet = DataParallel(casenet)
 filename = config_submit['outputfile']
 
 
-
 def test_casenet(model,testset):
     data_loader = DataLoader(
         testset,
         batch_size = 1,
         shuffle = False,
-        num_workers = 32,
+        num_workers = 0,
         pin_memory=True)
     #model = model.cuda()
     model.eval()

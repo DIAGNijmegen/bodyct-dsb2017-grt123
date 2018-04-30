@@ -54,18 +54,18 @@ class SplitComb():
 
     def combine(self, output, nzhw = None, side_len=None, stride=None, margin=None):
         
-        if side_len==None:
+        if side_len is None:
             side_len = self.side_len
-        if stride == None:
+        if stride is None:
             stride = self.stride
-        if margin == None:
+        if margin is None:
             margin = self.margin
-        if nzhw==None:
+        if nzhw is None:
             nz = self.nz
             nh = self.nh
             nw = self.nw
         else:
-            nz,nh,nw = nzhw
+            nz, nh, nw = nzhw
         assert(side_len % stride == 0)
         assert(margin % stride == 0)
         side_len /= stride

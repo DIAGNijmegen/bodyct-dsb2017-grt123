@@ -1,53 +1,28 @@
+from __future__ import print_function
+
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import dicom
 import os
 import scipy.ndimage
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+import SimpleITK as sitk
 
 from skimage import measure, morphology
 
+import image_loader as diag_image_loader
+
+def load_dicom_scan(case_path):
+    image, transform, origin, spacing = diag_image_loader.load_dicom_image(
+        [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
+    return np.array(image, dtype=np.int16), np.array(spacing, dtype=np.float32)
 
 
-def load_scan(path):
-    slices = [dicom.read_file(path + '/' + s) for s in os.listdir(path)]
-    slices.sort(key = lambda x: float(x.ImagePositionPatient[2]))
-    if slices[0].ImagePositionPatient[2] == slices[1].ImagePositionPatient[2]:
-        sec_num = 2;
-        while slices[0].ImagePositionPatient[2] == slices[sec_num].ImagePositionPatient[2]:
-            sec_num = sec_num+1;
-        slice_num = int(len(slices) / sec_num)
-        slices.sort(key = lambda x:float(x.InstanceNumber))
-        slices = slices[0:slice_num]
-        slices.sort(key = lambda x:float(x.ImagePositionPatient[2]))
-    try:
-        slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
-    except:
-        slice_thickness = np.abs(slices[0].SliceLocation - slices[1].SliceLocation)
-        
-    for s in slices:
-        s.SliceThickness = slice_thickness
-        
-    return slices
+def load_itk_image(path):
+    sitk_image = sitk.ReadImage(path)
+    pixel_data = sitk.GetArrayFromImage(sitk_image)
+    return np.array(pixel_data, dtype=np.int16), np.array(sitk_image.GetSpacing(), dtype=np.float32)
 
-def get_pixels_hu(slices):
-    image = np.stack([s.pixel_array for s in slices])
-    # Convert to int16 (from sometimes int16), 
-    # should be possible as values should always be low enough (<32k)
-    image = image.astype(np.int16)
-    
-    # Convert to Hounsfield units (HU)
-    for slice_number in range(len(slices)):        
-        intercept = slices[slice_number].RescaleIntercept
-        slope = slices[slice_number].RescaleSlope
-        
-        if slope != 1:
-            image[slice_number] = slope * image[slice_number].astype(np.float64)
-            image[slice_number] = image[slice_number].astype(np.int16)
-            
-        image[slice_number] += np.int16(intercept)
-    
-    return np.array(image, dtype=np.int16), np.array([slices[0].SliceThickness] + slices[0].PixelSpacing, dtype=np.float32)
 
 def binarize_per_slice(image, spacing, intensity_th=-600, sigma=1, area_th=30, eccen_th=0.99, bg_patch_size=10):
     bw = np.zeros(image.shape, dtype=bool)
@@ -226,8 +201,14 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
     return bw1, bw2, bw
 
 def step1_python(case_path):
-    case = load_scan(case_path)
-    case_pixels, spacing = get_pixels_hu(case)
+    print("  Loading", case_path)
+    if os.path.isdir(case_path):
+        case_pixels, spacing = load_dicom_scan(case_path)
+    elif os.path.splitext(case_path)[-1].lower() in ('.mha', '.mhd'):
+        case_pixels, spacing = load_itk_image(case_path)
+    else:
+        raise ValueError("Unknown file type: " + case_path)
+        
     bw = binarize_per_slice(case_pixels, spacing)
     flag = 0
     cut_num = 0

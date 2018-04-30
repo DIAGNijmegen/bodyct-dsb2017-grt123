@@ -25,7 +25,7 @@ class DataBowl3Detector(Dataset):
         self.r_rand = config['r_rand_crop']
         self.augtype = config['augtype']
         data_dir = config['datadir']
-	self.pad_value = config['pad_value']
+        self.pad_value = config['pad_value']
         
         self.split_comber = split_comber
         idcs = split
@@ -76,7 +76,7 @@ class DataBowl3Detector(Dataset):
         t = time.time()
         np.random.seed(int(str(t%1)[2:7]))#seed according to time
 
-	isRandomImg  = False
+        isRandomImg  = False
         if self.phase !='test':
             if idx>=len(self.bboxes):
                 isRandom = True
@@ -90,7 +90,7 @@ class DataBowl3Detector(Dataset):
         if self.phase != 'test':
             if not isRandomImg:
                 bbox = self.bboxes[idx]
-		filename = self.filenames[int(bbox[0])]
+                filename = self.filenames[int(bbox[0])]
                 imgs = np.load(filename)[0:self.channel]
                 bboxes = self.sample_bboxes[int(bbox[0])]
                 isScale = self.augtype['scale'] and (self.phase=='train')
@@ -100,15 +100,15 @@ class DataBowl3Detector(Dataset):
                         ifflip = self.augtype['flip'], ifrotate=self.augtype['rotate'], ifswap = self.augtype['swap'])
             else:
                 randimid = np.random.randint(len(self.kagglenames))
-		filename = self.kagglenames[randimid]
+                filename = self.kagglenames[randimid]
                 imgs = np.load(filename)[0:self.channel]
                 bboxes = self.sample_bboxes[randimid]
                 isScale = self.augtype['scale'] and (self.phase=='train')
                 sample, target, bboxes, coord = self.crop(imgs, [], bboxes,isScale=False,isRand=True)
             label = self.label_mapping(sample.shape[1:], target, bboxes)
             sample = sample.astype(np.float32)
-	    #if filename in self.kagglenames:
-	#	label[label==-1]=0
+            #if filename in self.kagglenames:
+        #        label[label==-1]=0
             sample = (sample.astype(np.float32)-128)/128
             return torch.from_numpy(sample), torch.from_numpy(label), coord
         else:

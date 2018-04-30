@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import numpy as np
 from scipy.io import loadmat
@@ -100,6 +102,7 @@ def savenpy(id,filelist,prep_folder,data_path,use_existing=True):
                     extendbox[1,0]:extendbox[1,1],
                     extendbox[2,0]:extendbox[2,1]]
         sliceim = sliceim2[np.newaxis,...]
+        print("  -> Writing", os.path.join(prep_folder, name))
         np.save(os.path.join(prep_folder,name+'_clean'),sliceim)
         np.save(os.path.join(prep_folder,name+'_label'),np.array([[0,0,0,0]]))
     except:
@@ -108,21 +111,27 @@ def savenpy(id,filelist,prep_folder,data_path,use_existing=True):
     print(name+' done')
 
     
-def full_prep(data_path,prep_folder,n_worker = None,use_existing=True):
+def full_prep(data_path,prep_folder,n_worker = 1, use_existing=True):
     warnings.filterwarnings("ignore")
     if not os.path.exists(prep_folder):
         os.mkdir(prep_folder)
 
             
     print('starting preprocessing')
-    pool = Pool(n_worker)
     filelist = [f for f in os.listdir(data_path)]
-    partial_savenpy = partial(savenpy,filelist=filelist,prep_folder=prep_folder,
-                              data_path=data_path,use_existing=use_existing)
+    print("Processing", len(filelist), "files with", n_worker, "workers")
 
-    N = len(filelist)
-    _=pool.map(partial_savenpy,range(N))
-    pool.close()
-    pool.join()
+    if n_worker <= 1:
+        for i in range(len(filelist)):
+            savenpy(i, filelist, prep_folder, data_path, use_existing=use_existing)
+    else:
+        partial_savenpy = partial(savenpy,filelist=filelist,prep_folder=prep_folder,
+                                  data_path=data_path,use_existing=use_existing)
+        N = len(filelist)
+        pool = Pool(n_worker)
+        _=pool.map(partial_savenpy,range(N))
+        pool.close()
+        pool.join()
+        
     print('end preprocessing')
     return filelist

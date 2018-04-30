@@ -17,7 +17,7 @@ from torch.autograd import Variable
 
 from layers import acc
 
-def test_detect(data_loader, net, get_pbb, save_dir, config,n_gpu):
+def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
     start_time = time.time()
     net.eval()
     split_comber = data_loader.dataset.split_comber
