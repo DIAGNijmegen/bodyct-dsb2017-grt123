@@ -16,6 +16,7 @@ import warnings
 import time
 
 import multiprocessing
+import Queue
 
 class ParallelProcessCaller(object):
     def __init__(self, cmd, args):
@@ -35,7 +36,7 @@ class ParallelProcessCaller(object):
             while True:
                 try:
                     self.__result = self.__queue.get(timeout=1)
-                except multiprocessing.Queue.Empty:
+                except Queue.Empty:
                     if self.proc.is_alive:
                         continue
                     else:
