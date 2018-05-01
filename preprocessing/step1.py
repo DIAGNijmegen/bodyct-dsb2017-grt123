@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import threading
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import dicom
@@ -11,6 +12,24 @@ import SimpleITK as sitk
 from skimage import measure, morphology
 
 import image_loader as diag_image_loader
+
+class ParallelCaller(object):
+    def __init__(self, cmd):
+        self.cmd = cmd
+        self.__result = None
+        self.thread = threading.Thread(target=self)
+        self.thread.start()
+        
+    def __call__(self, *args, **kwargs):
+        self.__result = self.cmd(*args, **kwargs)
+        
+    @property
+    def result(self):
+        if self.thread is not None:
+            self.thread.join()
+            self.thread = None
+        return self.__result
+
 
 def load_dicom_scan(case_path):
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
@@ -121,7 +140,7 @@ def fill_hole(bw):
     # idendify corner components
     bg_label = set([label[0, 0, 0], label[0, 0, -1], label[0, -1, 0], label[0, -1, -1], \
                     label[-1, 0, 0], label[-1, 0, -1], label[-1, -1, 0], label[-1, -1, -1]])
-    bw = ~np.in1d(label, list(bg_label)).reshape(label.shape)
+    bw = ~np.isin(label, list(bg_label))
     
     return bw
 
@@ -155,7 +174,7 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
         return bw
     
     def fill_2d_hole(bw):
-        for i in range(bw.shape[0]):
+        def run_hole_filler(i):
             current_slice = bw[i]
             label = measure.label(current_slice)
             properties = measure.regionprops(label)
@@ -164,32 +183,46 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
                 current_slice[bb[0]:bb[2], bb[1]:bb[3]] = current_slice[bb[0]:bb[2], bb[1]:bb[3]] | prop.filled_image
             bw[i] = current_slice
 
+        threads = [threading.Thread(target=run_hole_filler, args=(i,)) for i in range(bw.shape[0])]
+        for t in threads: t.start()
+        for t in threads: t.join()
+
         return bw
     
-    found_flag = False
-    iter_count = 0
-    bw0 = np.copy(bw)
-    while not found_flag and iter_count < max_iter:
-        label = measure.label(bw, connectivity=2)
-        properties = measure.regionprops(label)
-        properties.sort(key=lambda x: x.area, reverse=True)
-        if len(properties) > 1 and properties[0].area/properties[1].area < max_ratio:
-            found_flag = True
-            bw1 = label == properties[0].label
-            bw2 = label == properties[1].label
-        else:
-            bw = scipy.ndimage.binary_erosion(bw)
-            iter_count = iter_count + 1
+    def sequential_eroder(bw):
+        found_flag = False
+        iter_count = 0
+        bw0 = np.copy(bw)
+        bw1 = None
+        bw2 = None
+        
+        while not found_flag and iter_count < max_iter:
+            label = measure.label(bw, connectivity=2)
+            properties = measure.regionprops(label)
+            properties.sort(key=lambda x: x.area, reverse=True)
+            if len(properties) > 1 and float(properties[0].area)/float(properties[1].area) < max_ratio:
+                found_flag = True
+                bw1 = label == properties[0].label
+                bw2 = label == properties[1].label
+            else:
+                bw = scipy.ndimage.binary_erosion(bw)
+                iter_count = iter_count + 1
+        
+        return found_flag, bw, bw0, bw1, bw2
+    
+    found_flag, bw, bw0, bw1, bw2 = sequential_eroder(bw)
     
     if found_flag:
-        d1 = scipy.ndimage.morphology.distance_transform_edt(bw1 == False, sampling=spacing)
-        d2 = scipy.ndimage.morphology.distance_transform_edt(bw2 == False, sampling=spacing)
+        c1 = ParallelCaller(lambda : scipy.ndimage.morphology.distance_transform_edt(bw1 == False, sampling=spacing))
+        c2 = ParallelCaller(lambda : scipy.ndimage.morphology.distance_transform_edt(bw2 == False, sampling=spacing))
+        d1 = c1.result
+        d2 = c2.result
+        
         bw1 = bw0 & (d1 < d2)
         bw2 = bw0 & (d1 > d2)
-                
+        
         bw1 = extract_main(bw1)
         bw2 = extract_main(bw2)
-        
     else:
         bw1 = bw0
         bw2 = np.zeros(bw.shape).astype('bool')
@@ -197,10 +230,13 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
     bw1 = fill_2d_hole(bw1)
     bw2 = fill_2d_hole(bw2)
     bw = bw1 | bw2
-
+    
     return bw1, bw2, bw
 
+import time
 def step1_python(case_path):
+    st = time.time()
+    
     print("  Loading", case_path)
     if os.path.isdir(case_path):
         case_pixels, spacing = load_dicom_scan(case_path)
@@ -208,19 +244,24 @@ def step1_python(case_path):
         case_pixels, spacing = load_itk_image(case_path)
     else:
         raise ValueError("Unknown file type: " + case_path)
-        
+
+    print("binarize...", time.time() - st)
     bw = binarize_per_slice(case_pixels, spacing)
     flag = 0
     cut_num = 0
     cut_step = 2
     bw0 = np.copy(bw)
+    print("slicing...", time.time() - st)
     while flag == 0 and cut_num < bw.shape[0]:
         bw = np.copy(bw0)
         bw, flag = all_slice_analysis(bw, spacing, cut_num=cut_num, vol_limit=[0.68,7.5])
         cut_num = cut_num + cut_step
 
+    print("fill_hole...", time.time() - st)
     bw = fill_hole(bw)
+    print("two_lung_only...", time.time() - st)
     bw1, bw2, bw = two_lung_only(bw, spacing)
+    print("end step1", time.time() - st)
     return case_pixels, bw1, bw2, spacing
     
 if __name__ == '__main__':
