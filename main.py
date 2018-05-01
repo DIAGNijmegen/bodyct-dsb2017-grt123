@@ -48,11 +48,8 @@ if not os.path.exists(bbox_result_path):
 if not skip_detect:
     print "Detecting..."
     margin = 32
-    #sidelen = 144   <- original value
-
-    # Values to save GPU memory, still will require 8*4 GB of GPU mem for 96
-    #sidelen = 80
-    sidelen = 96
+    sidelen = 144
+    
     config1['datadir'] = prep_result_path
     split_comber = SplitComb(sidelen,config1['max_stride'],config1['stride'],margin,pad_value= config1['pad_value'])
 
@@ -108,7 +105,9 @@ config2['datadir'] = prep_result_path
 
 dataset = DataBowl3Classifier(testsplit, config2, phase = 'test')
 predlist = test_casenet(casenet,dataset).T
-anstable = np.concatenate([[testsplit],predlist],0).T
+if predlist.ndim == 1:
+    predlist = [predlist]
+anstable = np.concatenate([[testsplit], predlist],0).T
 df = pandas.DataFrame(anstable)
-df.columns={'id','cancer'}
+df.columns=['id','cancer']
 df.to_csv(filename,index=False)

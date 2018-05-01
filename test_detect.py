@@ -42,15 +42,16 @@ def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
         outputlist = []
         featurelist = []
 
-        for i in range(len(splitlist)-1):
-            input = Variable(data[splitlist[i]:splitlist[i+1]], volatile = True).cuda()
-            inputcoord = Variable(coord[splitlist[i]:splitlist[i+1]], volatile = True).cuda()
-            if isfeat:
-                output,feature = net(input,inputcoord)
-                featurelist.append(feature.data.cpu().numpy())
-            else:
-                output = net(input,inputcoord)
-            outputlist.append(output.data.cpu().numpy())
+        with torch.no_grad():
+            for i in range(len(splitlist)-1):
+                input = Variable(data[splitlist[i]:splitlist[i+1]], volatile = True).cuda()
+                inputcoord = Variable(coord[splitlist[i]:splitlist[i+1]], volatile = True).cuda()
+                if isfeat:
+                    output,feature = net(input,inputcoord)
+                    featurelist.append(feature.data.cpu().numpy())
+                else:
+                    output = net(input,inputcoord)
+                outputlist.append(output.data.cpu().numpy())
         output = np.concatenate(outputlist,0)
         output = split_comber.combine(output,nzhw=nzhw)
         if isfeat:
