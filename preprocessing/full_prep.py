@@ -15,6 +15,7 @@ from step1 import step1_python
 import warnings
 import time
 
+import subprocess
 import multiprocessing
 import Queue
 
@@ -28,19 +29,24 @@ class ParallelProcessCaller(object):
     
     @staticmethod
     def process_target(queue, cmd, *args):
-        queue.put(cmd(*args))
+        try:
+            queue.put(("res", cmd(*args)))
+        except Exception as e:
+            queue.put(("exc", e))
         
     @property
     def result(self):
         if self.proc is not None:
             while True:
                 try:
-                    self.__result = self.__queue.get(timeout=1)
+                    t, self.__result = self.__queue.get(timeout=1)
                 except Queue.Empty:
                     if self.proc.is_alive:
                         continue
                     else:
                         raise Exception("subprocess died unexpectedly")
+                if t == "exc":
+                    raise subprocess.CalledProcessError(str(self.__result))
                 break
             self.proc.join()
             self.proc = None
