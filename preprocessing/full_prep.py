@@ -32,10 +32,19 @@ class ParallelProcessCaller(object):
     @property
     def result(self):
         if self.proc is not None:
-            self.__result = self.__queue.get()
+            while True:
+                try:
+                    self.__result = self.__queue.get(timeout=1)
+                except multiprocessing.Queue.Empty:
+                    if self.proc.is_alive:
+                        continue
+                    else:
+                        raise Exception("subprocess died unexpectedly")
+                break
             self.proc.join()
             self.proc = None
         return self.__result
+
 
 def process_mask(mask):
     convex_mask = np.copy(mask)
