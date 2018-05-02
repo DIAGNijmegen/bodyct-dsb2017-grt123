@@ -117,3 +117,7 @@ anstable = np.concatenate([[testsplit], predlist],0).T
 df = pandas.DataFrame(anstable)
 df.columns=['id','cancer']
 df.to_csv(filename,index=False)
+
+import json
+with open(config_submit['crop_rects_outputfile'], 'wb') as f:
+    json.dump(dataset.crop_rect_map, f, indent=4)

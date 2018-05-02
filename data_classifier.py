@@ -33,6 +33,7 @@ class DataBowl3Classifier(Dataset):
         self.pbb_label = []
         
         idcs = split
+        self.src_file_names = split
         self.filenames = [os.path.join(datadir, '%s_clean.npy' % idx) for idx in idcs]
         if self.phase!='test':
             self.yset = 1-np.array([f.split('-')[1][2] for f in idcs]).astype('int')
@@ -58,6 +59,7 @@ class DataBowl3Classifier(Dataset):
             self.candidate_box.append(pbb)
             self.pbb_label.append(np.array(pbb_label))
         self.crop = simpleCrop(config,phase)
+        self.crop_rect_map = {}
         
 
     def __getitem__(self, idx,split=None):
@@ -70,7 +72,6 @@ class DataBowl3Classifier(Dataset):
         T = self.T
         topk = self.topk
         img = np.load(self.filenames[idx])
-        print("classifier DataLoader... loading", self.filenames[idx])
         if self.random_sample and self.phase=='train':
             chosenid = sample(conf_list,topk,T=T)
             #chosenid = conf_list.argsort()[::-1][:topk]
@@ -81,11 +82,18 @@ class DataBowl3Classifier(Dataset):
         padmask = np.concatenate([np.ones(len(chosenid)),np.zeros(self.topk-len(chosenid))])
         isnodlist = np.zeros([topk])
 
-        
+        if idx in self.crop_rect_map:
+            collected_crop_rects = self.crop_rect_map[idx]
+        else:
+            collected_crop_rects = []
+            self.crop_rect_map[self.src_file_names[idx]] = collected_crop_rects
+            
         for i,id in enumerate(chosenid):
             target = pbb[id,1:]
             isnod = pbb_label[id]
             crop,coord = self.crop(img,target)
+            collected_crop_rects.append(self.crop.used_crop_rect)
+            
             if self.phase=='train':
                 crop,coord = augment(crop,coord,
                                  ifflip=self.augtype['flip'],ifrotate=self.augtype['rotate'],
@@ -147,8 +155,14 @@ class simpleCrop():
             else:
                 rightpad = 0
             pad.append([leftpad,rightpad])
+        org_shape = imgs.shape
         imgs = np.pad(imgs,pad,'constant',constant_values =self.filling_value)
         crop = imgs[:,start[0]:start[0]+crop_size[0],start[1]:start[1]+crop_size[1],start[2]:start[2]+crop_size[2]]
+        self.used_crop_rect = {
+            "z": [float(start[0] - pad[1][0]) / org_shape[1], float(start[0]+crop_size[0] - pad[1][0]) / org_shape[1]],
+            "y": [float(start[1] - pad[2][0]) / org_shape[2], float(start[1]+crop_size[1] - pad[2][0]) / org_shape[2]],
+            "x": [float(start[2] - pad[3][0]) / org_shape[3], float(start[2]+crop_size[2] - pad[3][0]) / org_shape[3]],
+        }
         
         normstart = np.array(start).astype('float32')/np.array(imgs.shape[1:])-0.5
         normsize = np.array(crop_size).astype('float32')/np.array(imgs.shape[1:])
