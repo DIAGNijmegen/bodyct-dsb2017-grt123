@@ -18,6 +18,8 @@ from test_detect import test_detect
 from importlib import import_module
 import pandas
 
+use_gpu = config_submit['n_gpu'] > 0
+
 datapath = config_submit['datapath']
 prep_result_path = config_submit['preprocess_result_path']
 skip_prep = config_submit['skip_preprocessing']
@@ -35,9 +37,9 @@ config1, nod_net, loss, get_pbb = nodmodel.get_model()
 checkpoint = torch.load(config_submit['detector_param'])
 nod_net.load_state_dict(checkpoint['state_dict'])
 
-torch.cuda.set_device(0)
-nod_net = nod_net.cuda()
-#cudnn.benchmark = True
+if use_gpu:
+    torch.cuda.set_device(0)
+    nod_net = nod_net.cuda()
 nod_net = DataParallel(nod_net)
 
 bbox_result_path = './bbox_result'
@@ -69,9 +71,9 @@ config2 = casemodel.config
 checkpoint = torch.load(config_submit['classifier_param'])
 casenet.load_state_dict(checkpoint['state_dict'])
 
-torch.cuda.set_device(0)
-casenet = casenet.cuda()
-cudnn.benchmark = True
+if use_gpu:
+    torch.cuda.set_device(0)
+    casenet = casenet.cuda()
 casenet = DataParallel(casenet)
 
 filename = config_submit['outputfile']
@@ -84,18 +86,22 @@ def test_casenet(model,testset):
         shuffle = False,
         num_workers = 0,
         pin_memory=True)
-    #model = model.cuda()
     model.eval()
     predlist = []
     
     #     weight = torch.from_numpy(np.ones_like(y).float().cuda()
-    for i,(x,coord) in enumerate(data_loader):
-
-        coord = Variable(coord).cuda()
-        x = Variable(x).cuda()
-        nodulePred,casePred,_ = model(x,coord)
-        predlist.append(casePred.data.cpu().numpy())
-        #print([i,data_loader.dataset.split[i,1],casePred.data.cpu().numpy()])
+    with torch.no_grad():
+        for i,(x,coord) in enumerate(data_loader):
+            coord = Variable(coord, volatile=True)
+            x = Variable(x, volatile=True)
+            
+            if use_gpu:
+                coord = coord.cuda()
+                x = x.cuda()
+            
+            nodulePred,casePred,_ = model(x,coord)
+            predlist.append(casePred.data.cpu().numpy())
+            #print([i,data_loader.dataset.split[i,1],casePred.data.cpu().numpy()])
     predlist = np.concatenate(predlist)
     return predlist    
 config2['bboxpath'] = bbox_result_path

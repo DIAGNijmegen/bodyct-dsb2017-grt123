@@ -34,18 +34,23 @@ def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
         if 'output_feature' in config:
             if config['output_feature']:
                 isfeat = True
-        n_per_run = n_gpu
         print(data.size())
-        splitlist = range(0,len(data)+1,n_gpu)
+        splitlist = range(0,len(data)+1,max(n_gpu, 1))
         if splitlist[-1]!=len(data):
             splitlist.append(len(data))
         outputlist = []
         featurelist = []
 
+        if n_gpu == 0:
+            device_wrap = lambda x: x.to(dtype=torch.float32, device='cpu')
+        else:
+            device_wrap = lambda x: x.cuda()
+
         with torch.no_grad():
             for i in range(len(splitlist)-1):
-                input = Variable(data[splitlist[i]:splitlist[i+1]], volatile = True).cuda()
-                inputcoord = Variable(coord[splitlist[i]:splitlist[i+1]], volatile = True).cuda()
+                input = device_wrap(Variable(data[splitlist[i]:splitlist[i+1]], volatile = True))
+                inputcoord = device_wrap(Variable(coord[splitlist[i]:splitlist[i+1]], volatile = True).to(dtype=torch.float32, device='cpu'))
+
                 if isfeat:
                     output,feature = net(input,inputcoord)
                     featurelist.append(feature.data.cpu().numpy())
