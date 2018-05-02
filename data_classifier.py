@@ -33,7 +33,7 @@ class DataBowl3Classifier(Dataset):
         self.pbb_label = []
         
         idcs = split
-        self.filenames = [os.path.join(datadir, '%s_clean.npy' % idx.split('-')[0]) for idx in idcs]
+        self.filenames = [os.path.join(datadir, '%s_clean.npy' % idx) for idx in idcs]
         if self.phase!='test':
             self.yset = 1-np.array([f.split('-')[1][2] for f in idcs]).astype('int')
  
@@ -70,6 +70,7 @@ class DataBowl3Classifier(Dataset):
         T = self.T
         topk = self.topk
         img = np.load(self.filenames[idx])
+        print("classifier DataLoader... loading", self.filenames[idx])
         if self.random_sample and self.phase=='train':
             chosenid = sample(conf_list,topk,T=T)
             #chosenid = conf_list.argsort()[::-1][:topk]
@@ -151,9 +152,11 @@ class simpleCrop():
         
         normstart = np.array(start).astype('float32')/np.array(imgs.shape[1:])-0.5
         normsize = np.array(crop_size).astype('float32')/np.array(imgs.shape[1:])
-        xx,yy,zz = np.meshgrid(np.linspace(normstart[0],normstart[0]+normsize[0],self.crop_size[0]/self.stride),
-                           np.linspace(normstart[1],normstart[1]+normsize[1],self.crop_size[1]/self.stride),
-                           np.linspace(normstart[2],normstart[2]+normsize[2],self.crop_size[2]/self.stride),indexing ='ij')
+        xx,yy,zz = np.meshgrid(
+            np.linspace(normstart[0], normstart[0]+normsize[0], self.crop_size[0]/self.stride),
+            np.linspace(normstart[1], normstart[1]+normsize[1], self.crop_size[1]/self.stride),
+            np.linspace(normstart[2], normstart[2]+normsize[2], self.crop_size[2]/self.stride),
+            indexing ='ij')
         coord = np.concatenate([xx[np.newaxis,...], yy[np.newaxis,...],zz[np.newaxis,:]],0).astype('float32')
 
         if self.isScale:

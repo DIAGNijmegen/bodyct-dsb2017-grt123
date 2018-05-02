@@ -198,8 +198,8 @@ def full_prep(data_path,prep_folder,n_worker = 1, use_existing=True):
             async_results = []
             for i in range(N):
                 async_results.append(pool.apply_async(partial_savenpy, (i,)))
-            for r in async_results:
-                r.wait(10 * 60) # Results must be ready within 10 minutes each...
+            for i, r in enumerate(async_results):
+                r.get(10 * 60) # Results must be ready within 10 minutes each...
         except Exception as e:
             print("multiprocessing.Pool error: ", e)
             pool.terminate()

@@ -55,8 +55,8 @@ if not skip_detect:
     config1['datadir'] = prep_result_path
     split_comber = SplitComb(sidelen,config1['max_stride'],config1['stride'],margin,pad_value= config1['pad_value'])
 
-    dataset = DataBowl3Detector(testsplit,config1,phase='test',split_comber=split_comber)
-    test_loader = DataLoader(dataset,batch_size = 1,
+    dataset = DataBowl3Detector(testsplit, config1, phase='test', split_comber=split_comber)
+    test_loader = DataLoader(dataset, batch_size = 1,
         shuffle = False,num_workers = 0,pin_memory=False,collate_fn =collate)
 
     test_detect(test_loader, nod_net, get_pbb, bbox_result_path,config1,n_gpu=config_submit['n_gpu'])

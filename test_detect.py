@@ -26,8 +26,10 @@ def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
         target = [np.asarray(t, np.float32) for t in target]
         lbb = target[0]
         nzhw = nzhw[0]
-        name = data_loader.dataset.filenames[i_name].split('-')[0].split('/')[-1]
-        shortname = name.split('_clean')[0]
+        name = os.path.basename(data_loader.dataset.filenames[i_name])
+        shortname = os.path.splitext(name)[0]
+        if shortname.endswith('_clean'):
+            shortname = shortname[:-len('_clean')]
         data = data[0][0]
         coord = coord[0][0]
         isfeat = False
