@@ -15,9 +15,10 @@ from step1 import step1_python
 import warnings
 import time
 
-import subprocess
 import multiprocessing
 import Queue
+
+class ParallelProcessCallerError(Exception): pass
 
 class ParallelProcessCaller(object):
     def __init__(self, cmd, args):
@@ -44,9 +45,9 @@ class ParallelProcessCaller(object):
                     if self.proc.is_alive:
                         continue
                     else:
-                        raise Exception("subprocess died unexpectedly")
+                        raise ParallelProcessCallerError("subprocess died unexpectedly")
                 if t == "exc":
-                    raise subprocess.CalledProcessError(str(self.__result))
+                    raise ParallelProcessCallerError(str(self.__result))
                 break
             self.proc.join()
             self.proc = None
