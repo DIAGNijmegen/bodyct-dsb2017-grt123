@@ -190,17 +190,21 @@ def full_prep(data_path,prep_folder,n_worker = 1, use_existing=True):
     filelist = [f for f in os.listdir(data_path)]
     print("Processing", len(filelist), "files with", n_worker, "workers")
 
-    if n_worker <= 1:
-        for i in range(len(filelist)):
-            savenpy(i, filelist, prep_folder, data_path, use_existing=use_existing)
-    else:
+    if n_worker > 1:
         partial_savenpy = partial(savenpy,filelist=filelist,prep_folder=prep_folder,
                                   data_path=data_path,use_existing=use_existing)
         N = len(filelist)
         pool = NoDaemonProcessPool(n_worker)
-        _=pool.map(partial_savenpy,range(N))
+        try:
+            _=pool.map(partial_savenpy,range(N))
+        except Exception as e:
+            print("multiprocessing.Pool error: ", e)
         pool.close()
         pool.join()
+
+    print("(Re-)computing preprocessing results with a single thread...")
+    for i in range(len(filelist)):
+        savenpy(i, filelist, prep_folder, data_path, use_existing=use_existing)
         
     print('end preprocessing')
     return filelist
