@@ -110,7 +110,11 @@ def savenpy(id,filelist,prep_folder,data_path,use_existing=True):
             print(name+' had been done')
             return
     try:
-        im, m1, m2, spacing = step1_python(os.path.join(data_path,name))
+        step_result = step1_python(os.path.join(data_path, name))
+        if step_result is None:
+            return
+        
+        im, m1, m2, spacing = step_result
         
         st = time.time()
         Mask = m1+m2
@@ -186,7 +190,10 @@ def full_prep(data_path,prep_folder,n_worker = 1, use_existing=True):
 
             
     print('starting preprocessing')
-    filelist = [f for f in os.listdir(data_path)]
+    filelist = [
+        f for f in os.listdir(data_path)
+        if os.path.isdir(os.path.join(data_path, f)) or os.path.splitext(f)[1].lower() in (".mhd", ".mha")
+    ]
     print("Processing", len(filelist), "files with", n_worker, "workers")
 
     if n_worker > 1:

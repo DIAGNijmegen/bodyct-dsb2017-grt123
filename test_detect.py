@@ -52,13 +52,14 @@ def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
             for i in range(len(splitlist)-1):
                 input = device_wrap(Variable(data[splitlist[i]:splitlist[i+1]], volatile = True))
                 inputcoord = device_wrap(Variable(coord[splitlist[i]:splitlist[i+1]], volatile = True).to(dtype=torch.float32, device='cpu'))
-
+                
                 if isfeat:
                     output,feature = net(input,inputcoord)
                     featurelist.append(feature.data.cpu().numpy())
                 else:
                     output = net(input,inputcoord)
-                outputlist.append(output.data.cpu().numpy())
+                output = output.data.cpu().numpy()
+                outputlist.append(output)
         output = np.concatenate(outputlist,0)
         output = split_comber.combine(output,nzhw=nzhw)
         if isfeat:

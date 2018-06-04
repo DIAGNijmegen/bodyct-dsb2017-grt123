@@ -5,13 +5,20 @@ import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 import dicom
 import os
+import sys
 import scipy.ndimage
 #import matplotlib.pyplot as plt
 import SimpleITK as sitk
 
 from skimage import measure, morphology
 
-import image_loader as diag_image_loader
+try:
+    import image_loader as diag_image_loader
+except ImportError:
+    print(
+        "(diag-)image_loader not found, loading dicom will not be possible",
+        file=sys.stderr)
+    diag_image_loader = None
 
 class ParallelCaller(object):
     def __init__(self, cmd):
@@ -32,6 +39,8 @@ class ParallelCaller(object):
 
 
 def load_dicom_scan(case_path):
+    if diag_image_loader is None:
+        return None
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
         [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
     return np.array(image, dtype=np.int16), np.array(spacing, dtype=np.float32)
@@ -239,7 +248,10 @@ def step1_python(case_path):
     
     print("  Loading", case_path)
     if os.path.isdir(case_path):
-        case_pixels, spacing = load_dicom_scan(case_path)
+        scan_data = load_dicom_scan(case_path)
+        if scan_data is None:
+            return None
+        case_pixels, spacing = scan_data
     elif os.path.splitext(case_path)[-1].lower() in ('.mha', '.mhd'):
         case_pixels, spacing = load_itk_image(case_path)
     else:
