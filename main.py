@@ -33,7 +33,6 @@ if not skip_prep:
                               'use_exsiting_preprocessing'])
 else:
     testsplit = os.listdir(datapath)
-
 nodmodel = import_module(config_submit['detector_model'].split('.py')[0])
 config1, nod_net, loss, get_pbb = nodmodel.get_model()
 checkpoint = torch.load(config_submit['detector_param'])
@@ -126,7 +125,10 @@ import json
 
 with open(config_submit['crop_rects_outputfile'], 'wb') as f:
     json.dump(dataset.crop_rect_map, f, indent=4)
+testsplit = ''.join(testsplit)
 convert_voxel_to_world(prep_folder=prep_result_path,
+                       name=testsplit,
                        crop_rects_json_path=config_submit[
                            'crop_rects_outputfile'],
-                       output_path=os.environ.get("OUTPUT_DIR", "/output/"))
+                       output_path=os.path.join(
+                           os.environ.get("OUTPUT_DIR"), testsplit))

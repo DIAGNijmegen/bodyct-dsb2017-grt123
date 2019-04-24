@@ -39,14 +39,16 @@ class ParallelCaller(object):
         return self.__result
 
 
-def load_dicom_scan(case_path):
+def load_dicom_scan(data_path, name):
     if diag_image_loader is None:
         return None
+    case_path = os.path.join(data_path, name)
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
         [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
-    if os.path.exists('prep_result/preprocessing_info.txt'):
-        os.remove('prep_result/preprocessing_info.txt')
-    with open('prep_result/preprocessing_info.txt', 'a+') as handle:
+    print("case_path is = {}".format(case_path))
+    if os.path.exists('prep_result/{}_preprocessing_info.txt'.format(name)):
+        os.remove('prep_result/{}_preprocessing_info.txt'.format(name))
+    with open('prep_result/{}_preprocessing_info.txt'.format(name), 'a+') as handle:
         handle.write(
             'original_origin={},{},{}\n'.format(float(origin[2]),
                                                 float(origin[1]),
@@ -286,12 +288,12 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
 import time
 
 
-def step1_python(case_path):
+def step1_python(data_path, name):
     st = time.time()
-
+    case_path = os.path.join(data_path, name)
     print("  Loading", case_path)
     if os.path.isdir(case_path):
-        scan_data = load_dicom_scan(case_path)
+        scan_data = load_dicom_scan(data_path, name)
         if scan_data is None:
             return None
         case_pixels, spacing = scan_data

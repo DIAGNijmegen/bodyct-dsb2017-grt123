@@ -1,12 +1,20 @@
 import json
 import os
+import shutil
 
 
-def convert_voxel_to_world(prep_folder, crop_rects_json_path, output_path):
+def convert_voxel_to_world(prep_folder, name, crop_rects_json_path,
+                           output_path):
+    if not os.path.exists(output_path):
+        os.mkdir(output_path)
+    else:
+        shutil.rmtree(output_path)
     input_dict = {}
-    if os.path.exists(os.path.join(prep_folder, 'preprocessing_info.txt')):
-        with open(os.path.join(prep_folder, 'preprocessing_info.txt'),
-                  'r') as handle:
+    preprocessing_info_file_name = os.path.join(prep_folder,
+                                                '{}_preprocessing_info.txt'.format(
+                                                    name))
+    if os.path.exists(preprocessing_info_file_name):
+        with open(preprocessing_info_file_name, 'r') as handle:
             lines = handle.readlines()
             for line in lines:
                 key = line.split('=')[0]
@@ -15,7 +23,7 @@ def convert_voxel_to_world(prep_folder, crop_rects_json_path, output_path):
                 input_dict[key] = {'x': float(coord[0]), 'y': float(coord[1]),
                                    'z': float(coord[2].strip('\n'))}
     else:
-        print("File does not exist")
+        print("{} does not exist".format(preprocessing_info_file_name))
         return
     print(input_dict)
     input_dict['resampled_spacing'] = {'x': 1.0, 'y': 1.0,
@@ -88,7 +96,7 @@ def convert_voxel_to_world(prep_folder, crop_rects_json_path, output_path):
     output_string += ']'
     print(output_string)
     with open(os.path.join(output_path, "converted_voxel_to_world.txt"),
-              "w") as output:
+              "w+") as output:
         output.write(output_string)
     # [(74.0 115.0 398.5)  # 5, (-65.0 45.0 494.5) #4, (-53.0 169.0 267.5) #3, (-136.0 17.0 279.5) #2, (-156.0 53.0 263.5) #1]
     # [(74.0 115.0 398.5) #5, (-65.0 45.0 494.5) #4, (-53.0 169.0 267.5) #3, (-136.0 17.0 279.5) #2, (-156.0 53.0 263.5) #1]
