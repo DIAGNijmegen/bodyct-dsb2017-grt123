@@ -140,8 +140,8 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
                                np.min([newshape, box[:, 1] + 2 * margin],
                                       axis=0).T]).T
         extendbox = extendbox.astype('int')
-        with open('preprocessing_info.txt', 'a') as handle:
-            handle.write('extendbox_origin = {},{},{}'.format(extendbox[2][0],
+        with open('prep_result/preprocessing_info.txt', 'a') as handle:
+            handle.write('extendbox_origin={},{},{}\n'.format(extendbox[2][0],
                                                               extendbox[1][0],
                                                               extendbox[0][0]))
         print("pstep1, block1", time.time() - st)
@@ -176,11 +176,11 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
         print("pstep1, block3", time.time() - st)
 
         print("  -> Writing", os.path.join(prep_folder, name))
-        with open('preprocessing_info.txt', 'a') as handle:
+        with open('prep_result/preprocessing_info.txt', 'a') as handle:
             handle.write(
-                'cropped_grid_shape = {}X{}X{}'.format(int(sliceim.shape[2]),
-                                                       int(sliceim.shape[1]),
-                                                       int(sliceim.shape[0])))
+                'cropped_grid_shape={},{},{}\n'.format(int(sliceim2.shape[2]),
+                                                       int(sliceim2.shape[1]),
+                                                       int(sliceim2.shape[0])))
         np.save(os.path.join(prep_folder, name + '_clean'), sliceim)
         np.save(os.path.join(prep_folder, name + '_label'),
                 np.array([[0, 0, 0, 0]]))
@@ -190,7 +190,7 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
     print(name + ' done')
 
 
-# Thanks to: http://mindcache.io/2015/08/09/python-multiprocessing-module-daemonic-processes-are-not-allowed-to-have-children.html   
+# Thanks to: http://mindcache.io/2015/08/09/python-multiprocessing-module-daemonic-processes-are-not-allowed-to-have-children.html
 class NoDaemonProcess(multiprocessing.Process):
     # make 'daemon' attribute always return False
     def _get_daemon(self):

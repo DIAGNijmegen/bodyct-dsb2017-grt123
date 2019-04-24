@@ -44,15 +44,15 @@ def load_dicom_scan(case_path):
         return None
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
         [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
-    if os.path.exists('preprocessing_info.txt'):
-        os.remove('preprocessing_info.txt')
-    with open('preprocessing_info.txt', 'a+') as handle:
+    if os.path.exists('prep_result/preprocessing_info.txt'):
+        os.remove('prep_result/preprocessing_info.txt')
+    with open('prep_result/preprocessing_info.txt', 'a+') as handle:
         handle.write(
-            'original_origin = {},{},{}'.format(float(origin[2]),
+            'original_origin={},{},{}\n'.format(float(origin[2]),
                                                 float(origin[1]),
                                                 float(origin[0])))
         handle.write(
-            'original_spacing = {},{},{}'.format(float(spacing[2]),
+            'original_spacing={},{},{}\n'.format(float(spacing[2]),
                                                  float(spacing[1]),
                                                  float(spacing[0])))
     return np.array(image, dtype=np.int16), np.array(spacing, dtype=np.float32)
