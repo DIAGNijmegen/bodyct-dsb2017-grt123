@@ -16,15 +16,8 @@ else:
     print("File does not exist")
 print(input_dict)
 input_dict['resampled_spacing'] = {'x': 1.0, 'y': 1.0,
-                     'z': 1.0}  # harcoded to be this, no need to output
+                                   'z': 1.0}  # harcoded to be this, no need to output
 
-# cropped_grid_shape = {'x': 328.0, 'y': 240.0, 'z': 307.0}
-# original_origin = {'x': -216.0, 'y': -148.0, 'z': 224.5}
-# original_spacing = {'x': 0.78125, 'y': 0.78125, 'z': 1.0}
-# resampled_spacing = {'x': 1.0, 'y': 1.0,
-#                      'z': 1.0}  # harcoded to be this, no need to output
-# extendbox_origin = {'x': 46.0, 'y': 112.0, 'z': 21.0}
-#
 boundingbox_min = {'x': [], 'y': [], 'z': []}
 boundingbox_max = {'x': [], 'y': [], 'z': []}
 with open("crop_rects.json") as f:
@@ -42,13 +35,15 @@ print(boundingbox_max)
 for dim, value in input_dict['extendbox_origin'].iteritems():
     for index, min_coord in enumerate(
             boundingbox_min[dim]):
-        boundingbox_min[dim][index] = min_coord * input_dict['cropped_grid_shape'][
-            dim] + value
+        boundingbox_min[dim][index] = min_coord * \
+                                      input_dict['cropped_grid_shape'][
+                                          dim] + value
 for dim, value in input_dict['extendbox_origin'].iteritems():
     for index, max_coord in enumerate(
             boundingbox_max[dim]):
-        boundingbox_max[dim][index] = max_coord * input_dict['cropped_grid_shape'][
-            dim] + value
+        boundingbox_max[dim][index] = max_coord * \
+                                      input_dict['cropped_grid_shape'][
+                                          dim] + value
 
 print(boundingbox_min)
 print(boundingbox_max)
@@ -56,12 +51,16 @@ print(boundingbox_max)
 for dim, value in input_dict['original_origin'].iteritems():
     for index, min_coord in enumerate(
             boundingbox_min[dim]):
-        boundingbox_min[dim][index] = min_coord * input_dict['resampled_spacing'][dim] + value
+        boundingbox_min[dim][index] = min_coord * \
+                                      input_dict['resampled_spacing'][
+                                          dim] + value
 
 for dim, value in input_dict['original_origin'].iteritems():
     for index, max_coord in enumerate(
             boundingbox_max[dim]):
-        boundingbox_max[dim][index] = max_coord * input_dict['resampled_spacing'][dim] + value
+        boundingbox_max[dim][index] = max_coord * \
+                                      input_dict['resampled_spacing'][
+                                          dim] + value
 
 print(boundingbox_min)
 print(boundingbox_max)

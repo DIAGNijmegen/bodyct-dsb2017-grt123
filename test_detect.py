@@ -17,6 +17,7 @@ from torch.autograd import Variable
 
 from layers import acc
 
+
 def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
     start_time = time.time()
     net.eval()
@@ -37,8 +38,8 @@ def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
             if config['output_feature']:
                 isfeat = True
         print(data.size())
-        splitlist = range(0,len(data)+1,max(n_gpu, 1))
-        if splitlist[-1]!=len(data):
+        splitlist = range(0, len(data) + 1, max(n_gpu, 1))
+        if splitlist[-1] != len(data):
             splitlist.append(len(data))
         outputlist = []
         featurelist = []
@@ -49,37 +50,43 @@ def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
             device_wrap = lambda x: x.cuda()
 
         with torch.no_grad():
-            for i in range(len(splitlist)-1):
-                input = device_wrap(Variable(data[splitlist[i]:splitlist[i+1]], volatile = True))
-                inputcoord = device_wrap(Variable(coord[splitlist[i]:splitlist[i+1]], volatile = True).to(dtype=torch.float32, device='cpu'))
-                
+            for i in range(len(splitlist) - 1):
+                input = device_wrap(
+                    Variable(data[splitlist[i]:splitlist[i + 1]],
+                             volatile=True))
+                inputcoord = device_wrap(
+                    Variable(coord[splitlist[i]:splitlist[i + 1]],
+                             volatile=True).to(dtype=torch.float32,
+                                               device='cpu'))
+
                 if isfeat:
-                    output,feature = net(input,inputcoord)
+                    output, feature = net(input, inputcoord)
                     featurelist.append(feature.data.cpu().numpy())
                 else:
-                    output = net(input,inputcoord)
+                    output = net(input, inputcoord)
                 output = output.data.cpu().numpy()
                 outputlist.append(output)
-        output = np.concatenate(outputlist,0)
-        output = split_comber.combine(output,nzhw=nzhw)
+        output = np.concatenate(outputlist, 0)
+        output = split_comber.combine(output, nzhw=nzhw)
         if isfeat:
-            feature = np.concatenate(featurelist,0).transpose([0,2,3,4,1])[:,:,:,:,:,np.newaxis]
-            feature = split_comber.combine(feature,sidelen)[...,0]
+            feature = np.concatenate(featurelist, 0).transpose([0, 2, 3, 4, 1])[
+                      :, :, :, :, :, np.newaxis]
+            feature = split_comber.combine(feature, sidelen)[..., 0]
 
         thresh = -3
-        pbb,mask = get_pbb(output,thresh,ismask=True)
+        pbb, mask = get_pbb(output, thresh, ismask=True)
         if isfeat:
-            feature_selected = feature[mask[0],mask[1],mask[2]]
-            np.save(os.path.join(save_dir, shortname+'_feature.npy'), feature_selected)
-        #tp,fp,fn,_ = acc(pbb,lbb,0,0.1,0.1)
-        #print([len(tp),len(fp),len(fn)])
-        print([i_name,shortname])
+            feature_selected = feature[mask[0], mask[1], mask[2]]
+            np.save(os.path.join(save_dir, shortname + '_feature.npy'),
+                    feature_selected)
+        # tp,fp,fn,_ = acc(pbb,lbb,0,0.1,0.1)
+        # print([len(tp),len(fp),len(fn)])
+        print([i_name, shortname])
         e = time.time()
-        
-        np.save(os.path.join(save_dir, shortname+'_pbb.npy'), pbb)
-        np.save(os.path.join(save_dir, shortname+'_lbb.npy'), lbb)
-    end_time = time.time()
 
+        np.save(os.path.join(save_dir, shortname + '_pbb.npy'), pbb)
+        np.save(os.path.join(save_dir, shortname + '_lbb.npy'), lbb)
+    end_time = time.time()
 
     print('elapsed time is %3.2f seconds' % (end_time - start_time))
     print
