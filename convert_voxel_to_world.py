@@ -2,6 +2,7 @@ import json
 import os
 import copy
 
+
 def convert_voxel_to_world(prep_folder, name, crop_rects_json_path,
                            output_path):
     if not os.path.exists(output_path):
