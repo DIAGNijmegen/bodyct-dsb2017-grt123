@@ -45,10 +45,11 @@ def load_dicom_scan(data_path, name):
     case_path = os.path.join(data_path, name)
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
         [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
-    print("case_path is = {}".format(case_path))
     if os.path.exists('prep_result/{}_preprocessing_info.txt'.format(name)):
         os.remove('prep_result/{}_preprocessing_info.txt'.format(name))
-    with open('prep_result/{}_preprocessing_info.txt'.format(name), 'a+') as handle:
+    with open('prep_result/{}_preprocessing_info.txt'.format(name),
+              'a+') as handle:
+        # TODO: Output transform matrix as well
         handle.write(
             'original_origin={},{},{}\n'.format(float(origin[2]),
                                                 float(origin[1]),

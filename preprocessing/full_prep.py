@@ -140,7 +140,6 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
                                np.min([newshape, box[:, 1] + 2 * margin],
                                       axis=0).T]).T
         extendbox = extendbox.astype('int')
-        print("name is = {}".format(name))
         with open('prep_result/{}_preprocessing_info.txt'.format(name), 'a') as handle:
             handle.write('extendbox_origin={},{},{}\n'.format(extendbox[2][0],
                                                               extendbox[1][0],
