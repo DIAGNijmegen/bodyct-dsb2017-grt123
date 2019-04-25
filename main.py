@@ -17,7 +17,7 @@ from split_combine import SplitComb
 from test_detect import test_detect
 from importlib import import_module
 import pandas
-from convert_voxel_to_world import convert_voxel_to_world
+from convert_voxel_to_world import ConvertVoxelToWorld
 
 use_gpu = config_submit['n_gpu'] > 0
 
@@ -126,9 +126,9 @@ import json
 with open(config_submit['crop_rects_outputfile'], 'wb') as f:
     json.dump(dataset.crop_rect_map, f, indent=4)
 testsplit = ''.join(testsplit)
-convert_voxel_to_world(prep_folder=prep_result_path,
-                       name=testsplit,
-                       crop_rects_json_path=config_submit[
-                           'crop_rects_outputfile'],
-                       output_path=os.path.join(
-                           os.environ.get("OUTPUT_DIR"), testsplit))
+ConvertVoxelToWorld(prep_folder=prep_result_path,
+                    series_uid=testsplit,
+                    crop_rects_json_path=config_submit[
+                        'crop_rects_outputfile'],
+                    output_path=os.path.join(
+                        os.environ.get("OUTPUT_DIR"), testsplit))
