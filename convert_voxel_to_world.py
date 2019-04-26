@@ -8,8 +8,8 @@ class ConvertVoxelToWorld(object):
         self._conversion_parameters = {}
         self._coordinates = []
         self._preprocessing_info_file = os.path.join(prep_folder,
-                                                      '{}_preprocessing_info.txt'.format(
-                                                          series_uid))
+                                                     '{}_preprocessing_info.txt'.format(
+                                                         series_uid))
         self._crop_rects_json_path = crop_rects_json_path
         self._output_path = output_path
         if not os.path.exists(output_path):
@@ -45,10 +45,10 @@ class ConvertVoxelToWorld(object):
             except IOError:
                 print("Cannot read {}".format(self._preprocessing_info_file))
         else:
-            print("{} does not exist".format(
-                self._preprocessing_info_file))  # TODO: Should have raised an exception
+            raise IOError("{} does not exist".format(
+                self._preprocessing_info_file))
         self._conversion_parameters['resampled_spacing'] = {'x': 1.0, 'y': 1.0,
-                                                             'z': 1.0}
+                                                            'z': 1.0}
 
     def get_relative_voxel_coordinates(self):
         if os.path.exists(self._crop_rects_json_path):
@@ -65,8 +65,8 @@ class ConvertVoxelToWorld(object):
             except IOError:
                 print("Cannot read {}".format(self._crop_rects_json_path))
         else:
-            print("{} does not exist".format(
-                self._crop_rects_json_path))  # TODO: Should have raised an exception
+            raise IOError("{} does not exist".format(
+                self._crop_rects_json_path))
 
     def compute_cropped_voxel_coordinates(self):
         for coord in self._coordinates:
