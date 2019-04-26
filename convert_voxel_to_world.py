@@ -60,13 +60,12 @@ class ConvertVoxelToWorld(object):
 
     def compute_cropped_voxel_coordinates(self):
         for coord in self._coordinates:
-            for dim in dimensions:
-                coord[world.format(dim)] = [
-                    c * self._conversion_parameters['cropped_grid_shape'][
-                        '{}'.format(dim)] + \
-                    self._conversion_parameters['extendbox_origin'][
-                        '{}'.format(dim)] for c in
-                    coord[voxel.format(dim)]]
+            coord.update({world.format(dim): [
+                c * self._conversion_parameters['cropped_grid_shape'][
+                    '{}'.format(dim)] + \
+                self._conversion_parameters['extendbox_origin'][
+                    '{}'.format(dim)] for c in
+                coord[voxel.format(dim)]] for dim in dimensions})
 
     def compute_world_coordinates(self):
         for coord in self._coordinates:
