@@ -140,7 +140,10 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
                                np.min([newshape, box[:, 1] + 2 * margin],
                                       axis=0).T]).T
         extendbox = extendbox.astype('int')
-        with open('prep_result/{}_preprocessing_info.txt'.format(name), 'a') as handle:
+        preprocessing_info_file_name = os.path.join(
+            os.environ.get("OUTPUT_DIR", "/output/"),
+            '{}_preprocessing_info.txt'.format(name))
+        with open(preprocessing_info_file_name, 'a') as handle:
             handle.write('extendbox_origin={},{},{}\n'.format(extendbox[2][0],
                                                               extendbox[1][0],
                                                               extendbox[0][0]))
@@ -176,7 +179,11 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
         print("pstep1, block3", time.time() - st)
 
         print("  -> Writing", os.path.join(prep_folder, name))
-        with open('prep_result/{}_preprocessing_info.txt'.format(name), 'a') as handle:
+        preprocessing_info_file_name = os.path.join(
+            os.environ.get("OUTPUT_DIR", "/output/"),
+            '{}_preprocessing_info.txt'.format(name))
+        with open(preprocessing_info_file_name,
+                  'a') as handle:
             handle.write(
                 'cropped_grid_shape={},{},{}\n'.format(int(sliceim2.shape[2]),
                                                        int(sliceim2.shape[1]),
