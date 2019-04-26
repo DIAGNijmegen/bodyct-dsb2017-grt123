@@ -1,6 +1,9 @@
 import json
 import os
 
+world = 'world_{}'
+voxel = 'rel_voxel_{}'
+
 
 class ConvertVoxelToWorld(object):
     def __init__(self, prep_folder, series_uid, crop_rects_json_path,
@@ -22,7 +25,7 @@ class ConvertVoxelToWorld(object):
                    ['original_origin', 'extendbox_origin', 'cropped_grid_shape',
                     'resampled_spacing']):
             raise ValueError(
-                "original_origin, extendbox_origin, cropped_grid_shape, resampled_spacing must be present in {}".format(
+                'original_origin, extendbox_origin, cropped_grid_shape, resampled_spacing must be present in {}'.format(
                     self._preprocessing_info_file))
         self.get_relative_voxel_coordinates()
         self.compute_cropped_voxel_coordinates()
@@ -43,9 +46,9 @@ class ConvertVoxelToWorld(object):
                             'y': float(coord[1]),
                             'z': float(coord[2].strip('\n'))}
             except IOError:
-                print("Cannot read {}".format(self._preprocessing_info_file))
+                print('Cannot read {}'.format(self._preprocessing_info_file))
         else:
-            raise IOError("{} does not exist".format(
+            raise IOError('{} does not exist'.format(
                 self._preprocessing_info_file))
         self._conversion_parameters['resampled_spacing'] = {'x': 1.0, 'y': 1.0,
                                                             'z': 1.0}
@@ -57,10 +60,10 @@ class ConvertVoxelToWorld(object):
                     cropped_rects = json.load(f)
                 for items in cropped_rects.values():
                     for boundingbox in items:
-                        coordinate = {"world_x": [], "world_y": [],
-                                      "world_z": []}
+                        coordinate = {'world_x': [], 'world_y': [],
+                                      'world_z': []}
                         for dim, min_and_max in boundingbox.iteritems():
-                            coordinate['rel_voxel_{}'.format(dim)] = min_and_max
+                            coordinate[voxel.format(dim)] = min_and_max
                         self._coordinates.append(coordinate)
             except IOError:
                 print("Cannot read {}".format(self._crop_rects_json_path))
@@ -71,29 +74,29 @@ class ConvertVoxelToWorld(object):
     def compute_cropped_voxel_coordinates(self):
         for coord in self._coordinates:
             for dim in ['x', 'y', 'z']:
-                coord['world_{}'.format(dim)] = [
+                coord[world.format(dim)] = [
                     c * self._conversion_parameters['cropped_grid_shape'][
                         '{}'.format(dim)] + \
                     self._conversion_parameters['extendbox_origin'][
                         '{}'.format(dim)] for c in
-                    coord['rel_voxel_{}'.format(dim)]]
+                    coord[voxel.format(dim)]]
 
     def compute_world_coordinates(self):
         for coord in self._coordinates:
             for dim in ['x', 'y', 'z']:
-                coord['world_{}'.format(dim)] = [
+                coord[world.format(dim)] = [
                     c * self._conversion_parameters['resampled_spacing'][
                         '{}'.format(dim)] + \
                     self._conversion_parameters['original_origin'][
                         '{}'.format(dim)] for c in
-                    coord['world_{}'.format(dim)]]
-                start_and_end = coord['world_{}'.format(dim)]
-                coord['world_{}'.format(dim)] = [start_and_end[0],
+                    coord[world.format(dim)]]
+                start_and_end = coord[world.format(dim)]
+                coord[world.format(dim)] = [start_and_end[0],
                                                  sum(start_and_end) * 0.5,
                                                  start_and_end[1]]
 
     def output_json(self):
         with open(os.path.join(self._output_path,
-                               "detected_nodules_in_world_and_voxel_coordinates.json"),
-                  "w") as json_handle:
+                               'detected_nodules_in_world_and_voxel_coordinates.json'),
+                  'w') as json_handle:
             json.dump(self._coordinates, json_handle)
