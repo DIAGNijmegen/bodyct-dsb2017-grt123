@@ -7,13 +7,11 @@ dimensions = ['x', 'y', 'z']
 
 
 class ConvertVoxelToWorld(object):
-    def __init__(self, prep_folder, series_uid, cropped_rects,
+    def __init__(self, preprocessing_info_file, cropped_rects,
                  output_path):
         self._conversion_parameters = {}
         self._coordinates = []
-        self._preprocessing_info_file = os.path.join(prep_folder,
-                                                     '{}_preprocessing_info.txt'.format(
-                                                         series_uid))
+        self._preprocessing_info_file = preprocessing_info_file
         self._list_of_cropped_rects = cropped_rects
         self._output_path = output_path
         if not os.path.exists(output_path):

@@ -125,10 +125,11 @@ import json
 
 with open(config_submit['crop_rects_outputfile'], 'wb') as f:
     json.dump(dataset.crop_rect_map, f, indent=4)
-print(dataset.crop_rect_map)
 testsplit = ''.join(testsplit)
-ConvertVoxelToWorld(prep_folder=prep_result_path,
-                    series_uid=testsplit,
+preprocessing_info_file = os.path.join(prep_result_path,
+                                       '{}_preprocessing_info.txt'.format(
+                                           testsplit))
+ConvertVoxelToWorld(preprocessing_info_file=preprocessing_info_file,
                     cropped_rects=dataset.crop_rect_map.values(),
                     output_path=os.path.join(
                         os.environ.get("OUTPUT_DIR"), testsplit))
