@@ -53,13 +53,10 @@ class ConvertVoxelToWorld(object):
                                                             'z': 1.0}
 
     def get_relative_voxel_coordinates(self):
-        for items in self._list_of_cropped_rects:
-            for boundingbox in items:
-                coordinate = {world.format(dim): [] for dim in dimensions}
-                coordinate.update(
-                    {voxel.format(dim): min_and_max for dim, min_and_max
-                     in boundingbox.iteritems()})
-                self._coordinates.append(coordinate)
+        self._coordinates = [
+            {voxel.format(dim): min_and_max for dim, min_and_max
+             in boundingbox.iteritems()} for boundingbox in
+            self._list_of_cropped_rects]
 
     def compute_cropped_voxel_coordinates(self):
         for coord in self._coordinates:

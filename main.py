@@ -130,6 +130,6 @@ preprocessing_info_file = os.path.join(prep_result_path,
                                        '{}_preprocessing_info.txt'.format(
                                            testsplit))
 ConvertVoxelToWorld(preprocessing_info_file=preprocessing_info_file,
-                    cropped_rects=dataset.crop_rect_map.values(),
+                    cropped_rects=dataset.crop_rect_map.values()[0],
                     output_path=os.path.join(
                         os.environ.get("OUTPUT_DIR"), testsplit))
