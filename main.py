@@ -129,6 +129,6 @@ print(dataset.crop_rect_map)
 testsplit = ''.join(testsplit)
 ConvertVoxelToWorld(prep_folder=prep_result_path,
                     series_uid=testsplit,
-                    cropped_rects=dataset.crop_rect_map,
+                    cropped_rects=dataset.crop_rect_map.values(),
                     output_path=os.path.join(
                         os.environ.get("OUTPUT_DIR"), testsplit))

@@ -3,6 +3,7 @@ import os
 
 world = 'world_{}'
 voxel = 'rel_voxel_{}'
+dimensions = ['x', 'y', 'z']
 
 
 class ConvertVoxelToWorld(object):
@@ -13,7 +14,7 @@ class ConvertVoxelToWorld(object):
         self._preprocessing_info_file = os.path.join(prep_folder,
                                                      '{}_preprocessing_info.txt'.format(
                                                          series_uid))
-        self._cropped_rects = cropped_rects
+        self._list_of_cropped_rects = cropped_rects
         self._output_path = output_path
         if not os.path.exists(output_path):
             os.mkdir(output_path)
@@ -54,17 +55,17 @@ class ConvertVoxelToWorld(object):
                                                             'z': 1.0}
 
     def get_relative_voxel_coordinates(self):
-        for items in self._cropped_rects.values():
+        for items in self._list_of_cropped_rects:
             for boundingbox in items:
-                coordinate = {'world_x': [], 'world_y': [],
-                              'world_z': []}
-                for dim, min_and_max in boundingbox.iteritems():
-                    coordinate[voxel.format(dim)] = min_and_max
+                coordinate = {world.format(dim): [] for dim in dimensions}
+                coordinate.update(
+                    {voxel.format(dim): min_and_max for dim, min_and_max
+                     in boundingbox.iteritems()})
                 self._coordinates.append(coordinate)
 
     def compute_cropped_voxel_coordinates(self):
         for coord in self._coordinates:
-            for dim in ['x', 'y', 'z']:
+            for dim in dimensions:
                 coord[world.format(dim)] = [
                     c * self._conversion_parameters['cropped_grid_shape'][
                         '{}'.format(dim)] + \
@@ -74,7 +75,7 @@ class ConvertVoxelToWorld(object):
 
     def compute_world_coordinates(self):
         for coord in self._coordinates:
-            for dim in ['x', 'y', 'z']:
+            for dim in dimensions:
                 coord[world.format(dim)] = [
                     c * self._conversion_parameters['resampled_spacing'][
                         '{}'.format(dim)] + \
