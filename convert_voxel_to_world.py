@@ -6,14 +6,14 @@ voxel = 'rel_voxel_{}'
 
 
 class ConvertVoxelToWorld(object):
-    def __init__(self, prep_folder, series_uid, crop_rects_json_path,
+    def __init__(self, prep_folder, series_uid, cropped_rects,
                  output_path):
         self._conversion_parameters = {}
         self._coordinates = []
         self._preprocessing_info_file = os.path.join(prep_folder,
                                                      '{}_preprocessing_info.txt'.format(
                                                          series_uid))
-        self._crop_rects_json_path = crop_rects_json_path
+        self._cropped_rects = cropped_rects
         self._output_path = output_path
         if not os.path.exists(output_path):
             os.mkdir(output_path)
@@ -54,22 +54,13 @@ class ConvertVoxelToWorld(object):
                                                             'z': 1.0}
 
     def get_relative_voxel_coordinates(self):
-        if os.path.exists(self._crop_rects_json_path):
-            try:
-                with open(self._crop_rects_json_path) as f:
-                    cropped_rects = json.load(f)
-                for items in cropped_rects.values():
-                    for boundingbox in items:
-                        coordinate = {'world_x': [], 'world_y': [],
-                                      'world_z': []}
-                        for dim, min_and_max in boundingbox.iteritems():
-                            coordinate[voxel.format(dim)] = min_and_max
-                        self._coordinates.append(coordinate)
-            except IOError:
-                print("Cannot read {}".format(self._crop_rects_json_path))
-        else:
-            raise IOError("{} does not exist".format(
-                self._crop_rects_json_path))
+        for items in self._cropped_rects.values():
+            for boundingbox in items:
+                coordinate = {'world_x': [], 'world_y': [],
+                              'world_z': []}
+                for dim, min_and_max in boundingbox.iteritems():
+                    coordinate[voxel.format(dim)] = min_and_max
+                self._coordinates.append(coordinate)
 
     def compute_cropped_voxel_coordinates(self):
         for coord in self._coordinates:
@@ -92,8 +83,8 @@ class ConvertVoxelToWorld(object):
                     coord[world.format(dim)]]
                 start_and_end = coord[world.format(dim)]
                 coord[world.format(dim)] = [start_and_end[0],
-                                                 sum(start_and_end) * 0.5,
-                                                 start_and_end[1]]
+                                            sum(start_and_end) * 0.5,
+                                            start_and_end[1]]
 
     def output_json(self):
         with open(os.path.join(self._output_path,
