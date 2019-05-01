@@ -21,10 +21,7 @@ class ConvertVoxelToWorld(object):
     def postprocessing(self):
         self.get_relative_voxel_coordinates()
         self.get_conversion_parameters()
-        for series_uid, conversion_parameter in self._conversion_parameters.iteritems():
-            print(
-                "series_uid = {}, conversion_parameter = {}".format(series_uid,
-                                                                    conversion_parameter))
+        for scan_idx, conversion_parameter in self._conversion_parameters.iteritems():
             if not all(key in conversion_parameter.keys() for key in
                        ['original_origin', 'extendbox_origin',
                         'cropped_grid_shape',
@@ -33,23 +30,23 @@ class ConvertVoxelToWorld(object):
                     'original_origin, extendbox_origin, cropped_grid_shape, resampled_spacing must be present in {}'.format(
                         os.path.join(self._preprocessing_info_dir,
                                      '{}_preprocessing_info.txt'.format(
-                                         series_uid))))
+                                         scan_idx))))
         self.compute_cropped_voxel_coordinates()
         self.compute_world_coordinates()
         self.output_json()
 
     def get_relative_voxel_coordinates(self):
-        for series_uid, cropped_rects in self._dict_of_list_of_cropped_rects.iteritems():
-            self._coordinates[series_uid] = [
+        for scan_idx, cropped_rects in self._dict_of_list_of_cropped_rects.iteritems():
+            self._coordinates[scan_idx] = [
                 {voxel.format(dim): min_and_max for dim, min_and_max
                  in boundingbox.iteritems()} for boundingbox in
                 cropped_rects]
 
     def get_conversion_parameters(self):
-        for series_uid in self._coordinates.keys():
+        for scan_idx in self._coordinates.keys():
             preprocessing_info_file = os.path.join(self._preprocessing_info_dir,
                                                    '{}_preprocessing_info.txt'.format(
-                                                       series_uid))
+                                                       scan_idx))
             conversion_parameter = {}
             if os.path.exists(preprocessing_info_file):
                 try:
@@ -68,7 +65,7 @@ class ConvertVoxelToWorld(object):
                         'y': 1.0,
                         'z': 1.0}
                     self._conversion_parameters[
-                        series_uid] = conversion_parameter
+                        scan_idx] = conversion_parameter
                 except IOError:
                     print(
                         'Cannot read {}'.format(preprocessing_info_file))
@@ -77,25 +74,25 @@ class ConvertVoxelToWorld(object):
                     preprocessing_info_file))
 
     def compute_cropped_voxel_coordinates(self):
-        for series_uid, coords in self._coordinates.iteritems():
+        for scan_idx, coords in self._coordinates.iteritems():
             for coord in coords:
                 coord.update({world.format(dim): [
-                    c * self._conversion_parameters[series_uid][
+                    c * self._conversion_parameters[scan_idx][
                         'cropped_grid_shape'][
                         '{}'.format(dim)] + \
-                    self._conversion_parameters[series_uid]['extendbox_origin'][
+                    self._conversion_parameters[scan_idx]['extendbox_origin'][
                         '{}'.format(dim)] for c in
                     coord[voxel.format(dim)]] for dim in dimensions})
 
     def compute_world_coordinates(self):
-        for series_uid, coords in self._coordinates.iteritems():
+        for scan_idx, coords in self._coordinates.iteritems():
             for coord in coords:
                 for dim in dimensions:
                     coord[world.format(dim)] = [
-                        c * self._conversion_parameters[series_uid][
+                        c * self._conversion_parameters[scan_idx][
                             'resampled_spacing'][
                             '{}'.format(dim)] + \
-                        self._conversion_parameters[series_uid][
+                        self._conversion_parameters[scan_idx][
                             'original_origin'][
                             '{}'.format(dim)] for c in
                         coord[world.format(dim)]]
