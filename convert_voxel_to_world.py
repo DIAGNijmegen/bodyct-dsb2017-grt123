@@ -66,7 +66,6 @@ class ConvertVoxelToWorld(object):
                         'z': 1.0}
                     self._conversion_parameters[
                         scan_idx] = conversion_parameter
-                    print(conversion_parameter)
                 except IOError:
                     print(
                         'Cannot read {}'.format(preprocessing_info_file))
