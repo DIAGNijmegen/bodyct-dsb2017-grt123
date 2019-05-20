@@ -227,7 +227,7 @@ def full_prep(data_path, prep_folder, n_worker=1, use_existing=True):
     filelist = [
         f for f in os.listdir(data_path)
         if os.path.isdir(os.path.join(data_path, f)) or os.path.splitext(f)[
-            1].lower() in (".mhd", ".mha")
+            1].lower() in (".mhd", ".mha", ".dcm")
     ]
     print("Processing", len(filelist), "files with", n_worker, "workers")
 

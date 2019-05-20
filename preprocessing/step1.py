@@ -43,8 +43,11 @@ def load_dicom_scan(data_path, name):
     if diag_image_loader is None:
         return None
     case_path = os.path.join(data_path, name)
-    image, transform, origin, spacing = diag_image_loader.load_dicom_image(
-        [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
+    if os.path.isfile(case_path):  # TODO: Should I check for dcm files?
+        image, transform, origin, spacing = diag_image_loader.load_dicom_image(case_path)
+    else:
+        image, transform, origin, spacing = diag_image_loader.load_dicom_image(
+            [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
     preprocessing_info_file_name = os.path.join(
         os.environ.get("OUTPUT_DIR", "/output/"),
         '{}_preprocessing_info.txt'.format(name))
@@ -296,7 +299,8 @@ def step1_python(data_path, name):
     st = time.time()
     case_path = os.path.join(data_path, name)
     print("  Loading", case_path)
-    if os.path.isdir(case_path):
+    print(case_path, name)
+    if os.path.isdir(case_path) or os.path.splitext(case_path)[-1].lower() in ('.dcm'):
         scan_data = load_dicom_scan(data_path, name)
         if scan_data is None:
             return None
