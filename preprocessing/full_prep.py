@@ -113,6 +113,7 @@ def resample(imgs, spacing, new_spacing, order=2):
 def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
     resolution = np.array([1, 1, 1])
     name = filelist[id]
+    print("name = {}, filelist={}, data_path={}".format(name, filelist, data_path))
     if use_existing:
         if os.path.exists(os.path.join(prep_folder,
                                        name + '_label.npy')) and os.path.exists(
@@ -224,11 +225,13 @@ def full_prep(data_path, prep_folder, n_worker=1, use_existing=True):
         os.mkdir(prep_folder)
 
     print('starting preprocessing')
-    filelist = [
-        f for f in os.listdir(data_path)
-        if os.path.isdir(os.path.join(data_path, f)) or os.path.splitext(f)[
-            1].lower() in (".mhd", ".mha", ".dcm")
-    ]
+    filelist = [f for f in os.listdir(data_path)
+                if os.path.isdir(os.path.join(data_path, f)) or os.path.splitext(f)[
+                    1].lower() in (".mhd", ".mha")]
+    if not filelist:
+        filelist = [f for f in os.listdir(os.path.dirname(data_path))]
+        data_path = os.path.dirname(data_path)
+    print("filelist = {}".format(filelist))
     print("Processing", len(filelist), "files with", n_worker, "workers")
 
     if n_worker > 1:
