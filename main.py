@@ -30,6 +30,7 @@ skip_detect = config_submit['skip_detect']
 testsplit = [f for f in os.listdir(datapath)
              if os.path.isdir(os.path.join(datapath, f)) or os.path.splitext(f)[
                  1].lower() in (".mhd", ".mha")]
+# If there are no mhd or mha files and no folders in the input dir, we assume that a folder with dcm files is provided
 if not testsplit:
     testsplit = [os.path.basename(datapath)]
     datapath = os.path.dirname(datapath)
