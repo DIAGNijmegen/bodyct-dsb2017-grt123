@@ -219,18 +219,12 @@ class NoDaemonProcessPool(multiprocessing.pool.Pool):
     Process = NoDaemonProcess
 
 
-def full_prep(data_path, prep_folder, n_worker=1, use_existing=True):
+def full_prep(data_path, filelist, prep_folder, n_worker=1, use_existing=True):
     warnings.filterwarnings("ignore")
     if not os.path.exists(prep_folder):
         os.mkdir(prep_folder)
 
     print('starting preprocessing')
-    filelist = [f for f in os.listdir(data_path)
-                if os.path.isdir(os.path.join(data_path, f)) or os.path.splitext(f)[
-                    1].lower() in (".mhd", ".mha")]
-    if not filelist:
-        filelist = [f for f in os.listdir(os.path.dirname(data_path))]
-        data_path = os.path.dirname(data_path)
     print("filelist = {}".format(filelist))
     print("Processing", len(filelist), "files with", n_worker, "workers")
 
@@ -259,4 +253,3 @@ def full_prep(data_path, prep_folder, n_worker=1, use_existing=True):
         savenpy(i, filelist, prep_folder, data_path, use_existing=use_existing)
 
     print('end preprocessing')
-    return filelist
