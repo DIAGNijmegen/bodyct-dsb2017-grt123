@@ -91,7 +91,41 @@ class ConvertVoxelToWorld(object):
                     coord[world.format(dim)] = [
                         c * self._conversion_parameters[scan_idx][
                             'resampled_spacing'][
-                            '{}'.format(dim)] + \
+                            '{}'.format(dim)] for c in
+                        coord[world.format(dim)]]
+
+        for scan_idx, coords in self._coordinates.iteritems():
+            for coord in coords:
+                coord['world_x'] = [c * self._conversion_parameters[scan_idx][
+                    'rotation_matrix_x']['x'] + \
+                                    coord['world_y'][index] *
+                                    self._conversion_parameters[scan_idx][
+                                        'rotation_matrix_x']['y'] + \
+                                    coord['world_z'][index] *
+                                    self._conversion_parameters[scan_idx][
+                                        'rotation_matrix_x']['z'] for index, c
+                                    in enumerate(coord['world_x'])]
+                coord['world_y'] = [coord['world_x'][index] *
+                                    self._conversion_parameters[scan_idx][
+                                        'rotation_matrix_y']['x'] + \
+                                    c * self._conversion_parameters[scan_idx][
+                                        'rotation_matrix_y']['y'] +
+                                    coord['world_z'][index] *
+                                    self._conversion_parameters[scan_idx][
+                                        'rotation_matrix_y']['z'] for index, c
+                                    in enumerate(coord['world_y'])]
+                coord['world_z'] = [coord['world_x'][index] *
+                                    self._conversion_parameters[scan_idx][
+                                        'rotation_matrix_z']['x'] + \
+                                    coord['world_y'][index] *
+                                    self._conversion_parameters[scan_idx][
+                                        'rotation_matrix_z']['y'] +
+                                    c * self._conversion_parameters[scan_idx][
+                                        'rotation_matrix_z']['z'] for index, c
+                                    in enumerate(coord['world_z'])]
+                for dim in dimensions:
+                    coord[world.format(dim)] = [
+                        c +
                         self._conversion_parameters[scan_idx][
                             'original_origin'][
                             '{}'.format(dim)] for c in

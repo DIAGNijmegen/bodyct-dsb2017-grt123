@@ -53,7 +53,18 @@ def load_dicom_scan(data_path, name):
         os.remove(preprocessing_info_file_name)
     with open(preprocessing_info_file_name,
               'a+') as handle:
-        # TODO: Output transform matrix as well
+        handle.write(
+            'rotation_matrix_x={},{},{}\n'.format(float(transform[0][0]),
+                                                  float(transform[0][1]),
+                                                  float(transform[0][2])))
+        handle.write(
+            'rotation_matrix_y={},{},{}\n'.format(float(transform[1][0]),
+                                                  float(transform[1][1]),
+                                                  float(transform[1][2])))
+        handle.write(
+            'rotation_matrix_z={},{},{}\n'.format(float(transform[2][0]),
+                                                  float(transform[2][1]),
+                                                  float(transform[2][2])))
         handle.write(
             'original_origin={},{},{}\n'.format(float(origin[2]),
                                                 float(origin[1]),
