@@ -43,6 +43,7 @@ def load_dicom_scan(data_path, name):
     if diag_image_loader is None:
         return None
     case_path = os.path.join(data_path, name)
+    print("case_path={}, data_path={}, name={}".format(case_path, data_path, name))
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
         [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
     preprocessing_info_file_name = os.path.join(

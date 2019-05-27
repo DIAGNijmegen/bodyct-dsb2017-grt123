@@ -26,13 +26,21 @@ prep_result_path = config_submit['preprocess_result_path']
 skip_prep = config_submit['skip_preprocessing']
 skip_detect = config_submit['skip_detect']
 
+# Define the set of scans that we want to process
+testsplit = [f for f in os.listdir(datapath)
+             if os.path.isdir(os.path.join(datapath, f)) or os.path.splitext(f)[
+                 1].lower() in (".mhd", ".mha")]
+# If there are no mhd or mha files and no folders in the input dir, we assume that a folder with dcm files is provided
+if not testsplit:
+    testsplit = [os.path.basename(datapath)]
+    datapath = os.path.dirname(datapath)
+
 if not skip_prep:
-    testsplit = full_prep(datapath, prep_result_path,
-                          n_worker=config_submit['n_worker_preprocessing'],
-                          use_existing=config_submit[
+    full_prep(datapath, testsplit, prep_result_path,
+              n_worker=config_submit['n_worker_preprocessing'],
+              use_existing=config_submit[
                               'use_exsiting_preprocessing'])
-else:
-    testsplit = os.listdir(datapath)
+
 nodmodel = import_module(config_submit['detector_model'].split('.py')[0])
 config1, nod_net, loss, get_pbb = nodmodel.get_model()
 checkpoint = torch.load(config_submit['detector_param'])
@@ -46,7 +54,6 @@ nod_net = DataParallel(nod_net)
 bbox_result_path = './bbox_result'
 if not os.path.exists(bbox_result_path):
     os.mkdir(bbox_result_path)
-# testsplit = [f.split('_clean')[0] for f in os.listdir(prep_result_path) if '_clean' in f]
 
 if not skip_detect:
     print "Detecting..."
