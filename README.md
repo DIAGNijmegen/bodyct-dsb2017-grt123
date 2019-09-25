@@ -6,7 +6,7 @@ This is my configuration, I am not sure about the compatability of other version
 
 
 
-# Instructions for runing
+# Instructions for running
 
 Testing
 1.	unzip the stage 2 data 
