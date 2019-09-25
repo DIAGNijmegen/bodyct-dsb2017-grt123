@@ -77,11 +77,41 @@ def load_dicom_scan(data_path, name):
 
 
 def load_itk_image(path):
+    name = os.path.basename(path).split('.')[0]
     sitk_image = sitk.ReadImage(path)
+    spacing = sitk_image.GetSpacing()
+    origin = sitk_image.GetOrigin()
+    transform = sitk_image.GetDirection()
     pixel_data = sitk.GetArrayFromImage(sitk_image)
+    preprocessing_info_file_name = os.path.join(
+        os.environ.get("OUTPUT_DIR", "/output/"),
+        '{}_preprocessing_info.txt'.format(name))
+    if os.path.exists(preprocessing_info_file_name):
+        os.remove(preprocessing_info_file_name)
+    with open(preprocessing_info_file_name,
+              'a+') as handle:
+        handle.write(
+            'rotation_matrix_x={},{},{}\n'.format(float(transform[0]),
+                                                  float(transform[1]),
+                                                  float(transform[2])))
+        handle.write(
+            'rotation_matrix_y={},{},{}\n'.format(float(transform[3]),
+                                                  float(transform[4]),
+                                                  float(transform[5])))
+        handle.write(
+            'rotation_matrix_z={},{},{}\n'.format(float(transform[6]),
+                                                  float(transform[7]),
+                                                  float(transform[8])))
+        handle.write(
+            'original_origin={},{},{}\n'.format(float(origin[2]),
+                                                float(origin[1]),
+                                                float(origin[0])))
+        handle.write(
+            'original_spacing={},{},{}\n'.format(float(spacing[2]),
+                                                 float(spacing[1]),
+                                                 float(spacing[0])))
     return np.array(pixel_data, dtype=np.int16), np.array(
         sitk_image.GetSpacing(), dtype=np.float32)
-
 
 def binarize_per_slice(image, spacing, intensity_th=-600, sigma=1, area_th=30,
                        eccen_th=0.99, bg_patch_size=10):
