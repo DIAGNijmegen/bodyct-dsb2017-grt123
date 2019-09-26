@@ -77,7 +77,6 @@ def load_dicom_scan(data_path, name):
 
 
 def load_itk_image(path):
-    name = os.path.basename(path).split('.')[0]
     sitk_image = sitk.ReadImage(path)
     spacing = sitk_image.GetSpacing()
     origin = sitk_image.GetOrigin()
@@ -85,7 +84,7 @@ def load_itk_image(path):
     pixel_data = sitk.GetArrayFromImage(sitk_image)
     preprocessing_info_file_name = os.path.join(
         os.environ.get("OUTPUT_DIR", "/output/"),
-        '{}_preprocessing_info.txt'.format(name))
+        '{}_preprocessing_info.txt'.format(path))
     if os.path.exists(preprocessing_info_file_name):
         os.remove(preprocessing_info_file_name)
     with open(preprocessing_info_file_name,
