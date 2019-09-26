@@ -84,7 +84,7 @@ def load_itk_image(path):
     pixel_data = sitk.GetArrayFromImage(sitk_image)
     preprocessing_info_file_name = os.path.join(
         os.environ.get("OUTPUT_DIR", "/output/"),
-        '{}_preprocessing_info.txt'.format(path))
+        '{}_preprocessing_info.txt'.format(os.path.basename(os.path.normpath(path))))
     if os.path.exists(preprocessing_info_file_name):
         os.remove(preprocessing_info_file_name)
     with open(preprocessing_info_file_name,
