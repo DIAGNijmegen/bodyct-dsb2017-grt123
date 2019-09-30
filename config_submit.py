@@ -2,7 +2,7 @@ import os
 
 config = {
     'datapath': os.environ.get("INPUT_DIR", '/input/'),
-    'preprocess_result_path': './prep_result/',
+    'outputdir': os.environ.get("OUTPUT_DIR", '/output/'),
     'outputfile': os.path.join(
         os.environ.get("OUTPUT_DIR", "/output/"),
         "prediction.csv"),

@@ -22,7 +22,7 @@ from convert_voxel_to_world import ConvertVoxelToWorld
 use_gpu = config_submit['n_gpu'] > 0
 
 datapath = config_submit['datapath']
-prep_result_path = config_submit['preprocess_result_path']
+prep_result_path = config_submit['outputdir']
 skip_prep = config_submit['skip_preprocessing']
 skip_detect = config_submit['skip_detect']
 
@@ -133,8 +133,6 @@ import json
 with open(config_submit['crop_rects_outputfile'], 'wb') as f:
     json.dump(dataset.crop_rect_map, f, indent=4)
 testsplit = ''.join(testsplit)
-preprocessing_info_dir = os.path.join(
-    os.environ.get("OUTPUT_DIR", "/output/"))
-ConvertVoxelToWorld(preprocessing_info_dir=preprocessing_info_dir,
+ConvertVoxelToWorld(preprocessing_info_dir=prep_result_path,
                     cropped_rects=dataset.crop_rect_map,
                     output_path=os.environ.get("OUTPUT_DIR"))
