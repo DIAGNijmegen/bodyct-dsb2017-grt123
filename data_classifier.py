@@ -84,8 +84,8 @@ class DataBowl3Classifier(Dataset):
                               self.crop_size[1] / self.stride,
                               self.crop_size[2] / self.stride]).astype(
             'float32')
-        padmask = np.concatenate(
-            [np.ones(len(chosenid)), np.zeros(self.topk - len(chosenid))])
+        # padmask = np.concatenate(
+        #     [np.ones(len(chosenid)), np.zeros(self.topk - len(chosenid))])
         isnodlist = np.zeros([topk])
 
         if idx in self.crop_rect_map:
