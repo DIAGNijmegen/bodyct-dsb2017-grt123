@@ -16,6 +16,8 @@ def compare_reports(reporta, reportb, origin_atol=1e-3, prob_atol=1e-4):
 
     assert np.allclose(reporta.imageinfo.origin, reportb.imageinfo.origin, atol=origin_atol)
 
+    assert reporta.cancerinfo == reportb.cancerinfo
+
     assert len(reporta.findings) == len(reportb.findings)
     for f1, f2 in zip(reporta.findings, reportb.findings):
         for attr in ["id", "x", "y", "z", "diameter_mm", "volume_mm3"]:
@@ -40,9 +42,10 @@ def test_full_report_generation():
     imageinfo = xmlreport.ImageInfo(dimensions=(0,0,0), voxelsize=(0.,0.,0.), origin=(0.,0.,0.),
                                     orientation=(0,0,0,0,0,0,0,0,0.5), patientuid="34.2.32",
                                     studyuid="232.32.3", seriesuid="424.35")
+    cancerinfo = xmlreport.CancerInfo(casecancerprobability=0.5, referencenoduleids=[1, 2, 3, 4, 5])
 
-    report = xmlreport.LungCadReport(lungcad, imageinfo, [finding, finding])
-    report2 = xmlreport.LungCadReport(lungcad, imageinfo, [finding, finding])
+    report = xmlreport.LungCadReport(lungcad, imageinfo, [finding, finding], cancerinfo=cancerinfo)
+    report2 = xmlreport.LungCadReport(lungcad, imageinfo, [finding, finding], cancerinfo=cancerinfo)
     report3 = xmlreport.LungCadReport(lungcad, imageinfo, [finding])
     check_equivalence_and_properties(report, report2, report3)
     report4 = xmlreport.LungCadReport.from_xml(report.xml_element())
@@ -85,6 +88,15 @@ def test_equivalence_lungcad():
     check_equivalence_and_properties(lungcad4, lungcad2, lungcad3)
 
 
+def test_equivalence_cancerinfo():
+    cancerinfo = xmlreport.CancerInfo(casecancerprobability=0.5, referencenoduleids=[1,2,3,4,5])
+    cancerinfo2 = xmlreport.CancerInfo(casecancerprobability=0.5, referencenoduleids=[1,2,3,4,5])
+    cancerinfo3 = xmlreport.CancerInfo(casecancerprobability=0.5, referencenoduleids=[1,2,3,5])
+    check_equivalence_and_properties(cancerinfo, cancerinfo2, cancerinfo3)
+    cancerinfo4 = xmlreport.CancerInfo.from_xml(cancerinfo.xml_element())
+    check_equivalence_and_properties(cancerinfo4, cancerinfo2, cancerinfo3)
+
+
 def test_writing_and_reading_lungcadreports_xml(tmp_path):
     testfile = str(tmp_path / "out.xml")
 
@@ -104,4 +116,3 @@ def test_writing_and_reading_lungcadreports_xml(tmp_path):
     reportB = xmlreport.LungCadReport.from_xml(ET.parse(testfile))
 
     compare_reports(report, reportB)
-

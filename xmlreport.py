@@ -60,10 +60,11 @@ class XMLGeneratable(object):
 
 
 class LungCadReport(XMLGeneratable):
-    def __init__(self, lungcad, imageinfo, findings):
+    def __init__(self, lungcad, imageinfo, findings, cancerinfo=None):
         self.lungcad = lungcad
         self.imageinfo = imageinfo
         self.findings = findings
+        self.cancerinfo = cancerinfo
         self.validate()
 
     def validate(self):
@@ -75,12 +76,17 @@ class LungCadReport(XMLGeneratable):
         for finding in self.findings:
             instanceofcheck(finding, Finding)
             finding.validate()
+        if self.cancerinfo is not None:
+            instanceofcheck(self.cancerinfo, CancerInfo)
+            self.cancerinfo.validate()
 
     def xml_element(self):
         self.validate()
         root = et.Element("LungCADReport")
         root.append(self.lungcad.xml_element())
         root.append(self.imageinfo.xml_element())
+        if self.cancerinfo is not None:
+            root.append(self.cancerinfo.xml_element())
         findings = et.SubElement(root, "Findings")
         for finding in self.findings:
             findings.append(finding.xml_element())
@@ -90,15 +96,19 @@ class LungCadReport(XMLGeneratable):
     def from_xml(xml):
         lungcad = LungCad.from_xml(xml.find("./LungCAD"))
         imageinfo = ImageInfo.from_xml(xml.find("./ImageInfo"))
+        cancerinfo = xml.find("./CancerInfo")
+        if cancerinfo is not None:
+            cancerinfo = CancerInfo.from_xml(cancerinfo)
         findings = []
         for child in xml.findall("./Findings/Finding"):
             findings.append(Finding.from_xml(child))
-        return LungCadReport(lungcad, imageinfo, findings)
+        return LungCadReport(lungcad, imageinfo, findings, cancerinfo=cancerinfo)
 
     def __eq__(self, other):
         return isinstance(other, type(self)) and \
                self.lungcad == other.lungcad and \
                self.imageinfo == other.imageinfo and \
+               self.cancerinfo == other.cancerinfo and \
                len(self.findings) == len(other.findings) and \
                all([f1 == f2 for f1, f2 in zip(self.findings, other.findings)])
 
@@ -106,7 +116,7 @@ class LungCadReport(XMLGeneratable):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return "LungCAD: {}\nImageInfo: {}\nFindings:{}".format(self.lungcad, self.imageinfo, self.findings)
+        return "LungCAD: {}\nImageInfo: {}\nCancerInfo: {}\nFindings:{}".format(self.lungcad, self.imageinfo, self.cancerinfo, self.findings)
 
 
 class LungCad(XMLGeneratable):
@@ -293,7 +303,7 @@ class ImageInfo(XMLGeneratable):
 class CancerInfo(XMLGeneratable):
     def __init__(self, casecancerprobability, referencenoduleids):
         self.casecancerprobability = casecancerprobability
-        self.referencenoduleids = referencenoduleids
+        self.referencenoduleids = tuple(referencenoduleids)
 
     def validate(self):
         instanceofcheck(self.casecancerprobability, float)
@@ -333,5 +343,5 @@ if __name__ == "__main__":
     imageinfo = ImageInfo(dimensions=(0,0,0), voxelsize=(0.,0.,0.), origin=(0.,0.,0.), orientation=(0,0,0,0,0,0,0,0,0.5), patientuid="34.2.32", studyuid="232.32.3", seriesuid="424.35")
     cancerinfo = CancerInfo(casecancerprobability=0.5, referencenoduleids=[1,2,3,4,5])
 
-    report = LungCadReport(lungcad, imageinfo, [finding, finding])
+    report = LungCadReport(lungcad, imageinfo, [finding, finding], cancerinfo=cancerinfo)
     print(prettify(report.xml_element()))

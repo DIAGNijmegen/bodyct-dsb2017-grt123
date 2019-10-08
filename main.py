@@ -134,14 +134,14 @@ if predlist.ndim == 1:
 if nodule_specific_probability_list.ndim == 1:
     nodule_specific_probability_list = [nodule_specific_probability_list]
 
-# anstable = np.concatenate([[testsplit], predlist], 0).T
-# df = pandas.DataFrame(anstable)
-# df.columns = ['id', 'cancer']
-# df.to_csv(filename, index=False)
+anstable = np.concatenate([[testsplit], predlist], 0).T
+df = pandas.DataFrame(anstable)
+df.columns = ['id', 'cancer']
+df.to_csv(filename, index=False)
 
-df = pandas.DataFrame(nodule_specific_probability_list)
-df.columns = ['cancer_score']
-df.to_csv(config_submit['nodule_specific_prediction_file'], index=False)
+# df = pandas.DataFrame(nodule_specific_probability_list)
+# df.columns = ['cancer_score']
+# df.to_csv(config_submit['nodule_specific_prediction_file'], index=False)
 
 with open(config_submit['crop_rects_outputfile'], 'wb') as f:
     json.dump(dataset.crop_rect_map, f, indent=4)
