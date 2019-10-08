@@ -1,16 +1,8 @@
 import os
 import shutil
-import numpy as np
 from config_training import config
-
-
-from scipy.io import loadmat
 import numpy as np
-import h5py
-import pandas
-import scipy
 from scipy.ndimage.interpolation import zoom
-from skimage import measure
 import SimpleITK as sitk
 from scipy.ndimage.morphology import binary_dilation,generate_binary_structure
 from skimage.morphology import convex_hull_image
@@ -21,6 +13,7 @@ import sys
 sys.path.append('../preprocessing')
 from step1 import step1_python
 import warnings
+
 
 def resample(imgs, spacing, new_spacing,order=2):
     if len(imgs.shape)==3:
@@ -96,7 +89,7 @@ def savenpy(id,annos,filelist,data_path,prep_folder):
     label = annos[annos[:,0]==name]
     label = label[:,[3,1,2,4]].astype('float')
     
-    im, m1, m2, spacing = step1_python(os.path.join(data_path,name))
+    im, m1, m2, spacing = step1_python(os.path.join(data_path,name), prep_folder)
     Mask = m1+m2
     
     newshape = np.round(np.array(Mask.shape)*spacing/resolution)

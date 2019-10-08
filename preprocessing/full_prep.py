@@ -120,7 +120,7 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
             print(name + ' had been done')
             return
     try:
-        step_result = step1_python(data_path, name)
+        step_result = step1_python(data_path, prep_folder, name)
         if step_result is None:
             return
 
@@ -140,8 +140,7 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
                                np.min([newshape, box[:, 1] + 2 * margin],
                                       axis=0).T]).T
         extendbox = extendbox.astype('int')
-        preprocessing_info_file_name = os.path.join(
-            os.environ.get("OUTPUT_DIR", "/output/"),
+        preprocessing_info_file_name = os.path.join(prep_folder,
             '{}_preprocessing_info.txt'.format(name))
         with open(preprocessing_info_file_name, 'a') as handle:
             handle.write('extendbox_origin={},{},{}\n'.format(extendbox[2][0],
@@ -179,8 +178,7 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
         print("pstep1, block3", time.time() - st)
 
         print("  -> Writing", os.path.join(prep_folder, name))
-        preprocessing_info_file_name = os.path.join(
-            os.environ.get("OUTPUT_DIR", "/output/"),
+        preprocessing_info_file_name = os.path.join(prep_folder,
             '{}_preprocessing_info.txt'.format(name))
         with open(preprocessing_info_file_name,
                   'a') as handle:
