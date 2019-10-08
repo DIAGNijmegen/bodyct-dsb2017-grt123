@@ -176,7 +176,7 @@ class LungCad(XMLGeneratable):
 
 
 class Finding(XMLGeneratable):
-    def __init__(self, id, x, y, z, probability, diameter_mm, volume_mm3):
+    def __init__(self, id, x, y, z, probability, diameter_mm, volume_mm3, extent=None, cancerprobability=None):
         self.id = id
         self.x = x
         self.y = y
@@ -184,16 +184,35 @@ class Finding(XMLGeneratable):
         self.probability = probability
         self.diameter_mm = diameter_mm
         self.volume_mm3 = volume_mm3
+        self.extent = extent
+        if self.extent is not None:
+            self.extent = tuple(extent)
+        self.cancerprobability = cancerprobability
 
     def validate(self):
         instanceofcheck(self.id, int)
         for var in [self.x, self.y, self.z, self.probability, self.diameter_mm, self.volume_mm3]:
             instanceofcheck(var, (float, int))
+        if self.cancerprobability is not None:
+            instanceofcheck(self.cancerprobability, (float, int))
+        if self.extent is not None:
+            lencheck(self.extent, 3)
+            for element in self.extent:
+                instanceofcheck(element, (int, float))
 
     def xml_element(self):
         finding = et.Element("Finding")
-        for attr in ["ID", "X", "Y", "Z", "Probability", "Diameter_mm", "Volume_mm3"]:
-            et.SubElement(finding, attr).text = str(getattr(self, attr.lower()))
+        for attr in ["ID", "X", "Y", "Z", "Extent", "Probability", "CancerProbability", "Diameter_mm", "Volume_mm3"]:
+            if attr == "CancerProbability":
+                if self.cancerprobability is not None:
+                    et.SubElement(finding, attr).text = str(self.cancerprobability)
+            elif attr == "Extent":
+                if self.extent is not None:
+                    ext = et.SubElement(finding, "Extent")
+                    for e, idx in zip(self.extent, ["X", "Y", "Z"]):
+                        et.SubElement(ext, "Extent{}".format(idx)).text = str(e)
+            else:
+                et.SubElement(finding, attr).text = str(getattr(self, attr.lower()))
         return finding
 
     @staticmethod
@@ -205,7 +224,13 @@ class Finding(XMLGeneratable):
         probability = float(xml.find("./Probability").text)
         diameter_mm = float(xml.find("./Diameter_mm").text)
         volume_mm3 = float(xml.find("./Volume_mm3").text)
-        return Finding(id, x, y, z, probability, diameter_mm, volume_mm3)
+        cancerprobability = xml.find("./CancerProbability")
+        if cancerprobability is not None:
+            cancerprobability = float(cancerprobability.text)
+        extent = xml.find("./Extent")
+        if extent is not None:
+            extent = tuple([float(xml.find("./Extent/Extent{}".format(element)).text) for element in ["X", "Y", "Z"]])
+        return Finding(id, x, y, z, probability, diameter_mm, volume_mm3, cancerprobability=cancerprobability, extent=extent)
 
     def __eq__(self, other):
         return isinstance(other, type(self)) and \
@@ -213,7 +238,9 @@ class Finding(XMLGeneratable):
                self.x == other.x and \
                self.y == other.y and \
                self.z == other.z and \
+               self.extent == other.extent and \
                self.probability == other.probability and \
+               self.cancerprobability == other.cancerprobability and \
                self.diameter_mm == other.diameter_mm and \
                self.volume_mm3 == other.volume_mm3
 
@@ -221,12 +248,14 @@ class Finding(XMLGeneratable):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return "id: {} x: {} y: {} z: {} probability: {} diameter_mm: {} volume_mm3: {}".format(
+        return "id: {} x: {} y: {} z: {} extent: {} probability: {} cancerprobability: {} diameter_mm: {} volume_mm3: {}".format(
             self.id,
             self.x,
             self.y,
             self.z,
+            self.extent,
             self.probability,
+            self.cancerprobability,
             self.diameter_mm,
             self.volume_mm3)
 

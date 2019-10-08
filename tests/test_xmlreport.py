@@ -23,6 +23,17 @@ def compare_reports(reporta, reportb, origin_atol=1e-3, prob_atol=1e-4):
         for attr in ["id", "x", "y", "z", "diameter_mm", "volume_mm3"]:
             assert getattr(f1, attr) == getattr(f2, attr)
         assert np.isclose(f1.probability, f2.probability, atol=prob_atol)
+        a, b = f1.extent, f2.extent
+        if a is None:
+            assert b is None
+        else:
+            assert len(a) == len(b)
+            for aa, bb in zip(a, b):
+                assert np.isclose(aa, bb, atol=1e-8)
+        if f1.cancerprobability is None:
+            assert f1.cancerprobability == f2.cancerprobability
+        else:
+            assert np.isclose(f1.cancerprobability, f2.cancerprobability, atol=prob_atol)
 
 
 def check_equivalence_and_properties(sampleA, sampleA2, sampleB):
@@ -53,9 +64,9 @@ def test_full_report_generation():
 
 
 def test_equivalence_finding():
-    finding = xmlreport.Finding(0, 2., 3., 4., 0.5, 20., 10.)
-    finding2 = xmlreport.Finding(0, 2., 3., 4., 0.5, 20., 10.)
-    finding3 = xmlreport.Finding(0, 2., 3., 4., 1.5, 20., 10.)
+    finding = xmlreport.Finding(0, 2., 3., 4., 0.5, 20., 10., extent=[1, 2, 3], cancerprobability=0.4)
+    finding2 = xmlreport.Finding(0, 2., 3., 4., 0.5, 20., 10., extent=(1, 2, 3), cancerprobability=0.4)
+    finding3 = xmlreport.Finding(0, 2., 3., 4., 1.5, 20., 10., extent=[1, 2, 3], cancerprobability=0.4)
     check_equivalence_and_properties(finding, finding2, finding3)
     finding4 = xmlreport.Finding.from_xml(finding.xml_element())
     check_equivalence_and_properties(finding4, finding2, finding3)
@@ -103,13 +114,15 @@ def test_writing_and_reading_lungcadreports_xml(tmp_path):
     findings = []
     for i in range(3):
         findings.append(xmlreport.Finding(i, 2., 3., 4., 0.5, 20., 10.))
+    findings.append(xmlreport.Finding(3, 1, 2, 3, 0.5, 0.1, -1, (2, 3, 4), 0.7))
     lungcad = xmlreport.LungCad(revision= "", name="GPUCAD", datetimeofexecution="", trainingset1="",
                                 trainingset2="", coordinatesystem="World", computationtimeinseconds=33.0)
     imageinfo = xmlreport.ImageInfo(dimensions=[0,0,0], voxelsize=[0.,0.,0.], origin=[0.,0.,0.],
                                     orientation=[0,0,0,0,0,0,0,0,0.5], patientuid="34.2.32",
                                     studyuid="232.32.3", seriesuid="424.35")
+    cancerinfo = xmlreport.CancerInfo(casecancerprobability=0.5, referencenoduleids=[1, 2, 3, 4, 5])
 
-    report = xmlreport.LungCadReport(lungcad, imageinfo, findings)
+    report = xmlreport.LungCadReport(lungcad, imageinfo, findings, cancerinfo=cancerinfo)
 
     with open(testfile, "w") as f:
         ET.ElementTree(report.xml_element()).write(f, encoding="UTF-8", xml_declaration=True)
