@@ -1,28 +1,29 @@
 from preprocessing import full_prep
 from config_submit import config as config_submit
 
+import numpy as np
+import json
+import os
 import torch
 from torch.nn import DataParallel
-from torch.backends import cudnn
 from torch.utils.data import DataLoader
-from torch import optim
 from torch.autograd import Variable
 
-from layers import acc
 from data_detector import DataBowl3Detector, collate
 from data_classifier import DataBowl3Classifier
 
-from utils import *
 from split_combine import SplitComb
 from test_detect import test_detect
 from importlib import import_module
 import pandas
 from convert_voxel_to_world import ConvertVoxelToWorld
 
+
 use_gpu = config_submit['n_gpu'] > 0
 
 datapath = config_submit['datapath']
-prep_result_path = config_submit['outputdir']
+prep_result_path = config_submit['output_prep_dir']
+bbox_result_path = config_submit["output_bbox_dir"]
 skip_prep = config_submit['skip_preprocessing']
 skip_detect = config_submit['skip_detect']
 
@@ -34,6 +35,9 @@ testsplit = [f for f in os.listdir(datapath)
 if not testsplit:
     testsplit = [os.path.basename(datapath)]
     datapath = os.path.dirname(datapath)
+
+if not os.path.exists(prep_result_path):
+    os.mkdir(prep_result_path)
 
 if not skip_prep:
     full_prep(datapath, testsplit, prep_result_path,
@@ -51,7 +55,6 @@ if use_gpu:
     nod_net = nod_net.cuda()
 nod_net = DataParallel(nod_net)
 
-bbox_result_path = './bbox_result'
 if not os.path.exists(bbox_result_path):
     os.mkdir(bbox_result_path)
 
@@ -130,14 +133,15 @@ if predlist.ndim == 1:
     predlist = [predlist]
 if nodule_specific_probability_list.ndim == 1:
     nodule_specific_probability_list = [nodule_specific_probability_list]
-anstable = np.concatenate([[testsplit], predlist], 0).T
-df = pandas.DataFrame(anstable)
-df.columns = ['id', 'cancer']
-df.to_csv(filename, index=False)
+
+# anstable = np.concatenate([[testsplit], predlist], 0).T
+# df = pandas.DataFrame(anstable)
+# df.columns = ['id', 'cancer']
+# df.to_csv(filename, index=False)
+
 df = pandas.DataFrame(nodule_specific_probability_list)
 df.columns = ['cancer_score']
 df.to_csv(config_submit['nodule_specific_prediction_file'], index=False)
-import json
 
 with open(config_submit['crop_rects_outputfile'], 'wb') as f:
     json.dump(dataset.crop_rect_map, f, indent=4)
