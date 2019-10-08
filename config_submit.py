@@ -6,6 +6,9 @@ config = {
     'outputfile': os.path.join(
         os.environ.get("OUTPUT_DIR", "/output/"),
         "prediction.csv"),
+    'nodule_specific_prediction_file': os.path.join(
+        os.environ.get("OUTPUT_DIR", "/output/"),
+        "nodulespecificpredictions.csv"),
     'crop_rects_outputfile': os.path.join(
         os.environ.get("OUTPUT_DIR", "/output/"),
         "crop_rects.json"),

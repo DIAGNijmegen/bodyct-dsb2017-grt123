@@ -39,7 +39,7 @@ if not skip_prep:
     full_prep(datapath, testsplit, prep_result_path,
               n_worker=config_submit['n_worker_preprocessing'],
               use_existing=config_submit[
-                              'use_exsiting_preprocessing'])
+                  'use_exsiting_preprocessing'])
 
 nodmodel = import_module(config_submit['detector_model'].split('.py')[0])
 config1, nod_net, loss, get_pbb = nodmodel.get_model()
@@ -97,6 +97,7 @@ def test_casenet(model, testset):
         num_workers=0,
         pin_memory=True)
     model.eval()
+    nodule_specific_probability_list = []
     predlist = []
 
     #     weight = torch.from_numpy(np.ones_like(y).float().cuda()
@@ -109,25 +110,33 @@ def test_casenet(model, testset):
                 coord = coord.cuda()
                 x = x.cuda()
 
-            nodulePred, casePred, _ = model(x, coord)
+            nodulePred, casePred, out = model(x, coord)
+            nodule_specific_probability_list.append(out.data.cpu().numpy())
             predlist.append(casePred.data.cpu().numpy())
             # print([i,data_loader.dataset.split[i,1],casePred.data.cpu().numpy()])
+    nodule_specific_probability_list = np.concatenate(nodule_specific_probability_list)
     predlist = np.concatenate(predlist)
-    return predlist
+    return predlist, nodule_specific_probability_list
 
 
 config2['bboxpath'] = bbox_result_path
 config2['datadir'] = prep_result_path
 
 dataset = DataBowl3Classifier(testsplit, config2, phase='test')
-predlist = test_casenet(casenet, dataset).T
+predlist, nodule_specific_probability_list = test_casenet(casenet, dataset)
+predlist = predlist.T
+nodule_specific_probability_list = nodule_specific_probability_list.T
 if predlist.ndim == 1:
     predlist = [predlist]
+if nodule_specific_probability_list.ndim == 1:
+    nodule_specific_probability_list = [nodule_specific_probability_list]
 anstable = np.concatenate([[testsplit], predlist], 0).T
 df = pandas.DataFrame(anstable)
 df.columns = ['id', 'cancer']
 df.to_csv(filename, index=False)
-
+df = pandas.DataFrame(nodule_specific_probability_list)
+df.columns = ['cancer_score']
+df.to_csv(config_submit['nodule_specific_prediction_file'], index=False)
 import json
 
 with open(config_submit['crop_rects_outputfile'], 'wb') as f:
