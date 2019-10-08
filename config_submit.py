@@ -3,6 +3,8 @@ import os
 config = {
     'datapath': os.environ.get("INPUT_DIR", '/input/'),
     'outputdir': os.environ.get("OUTPUT_DIR", '/output/'),
+    'output_bbox_dir': os.path.join(os.environ.get("OUTPUT_DIR", '/output/'), "bbox"),
+    'output_prep_dir': os.path.join(os.environ.get("OUTPUT_DIR", '/output/'), "prep"),
     'outputfile': os.path.join(
         os.environ.get("OUTPUT_DIR", "/output/"),
         "prediction.csv"),

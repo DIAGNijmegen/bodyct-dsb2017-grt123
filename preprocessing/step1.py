@@ -39,7 +39,7 @@ class ParallelCaller(object):
         return self.__result
 
 
-def load_dicom_scan(data_path, name):
+def load_dicom_scan(data_path, prep_folder, name):
     if diag_image_loader is None:
         return None
     case_path = os.path.join(data_path, name)
@@ -47,7 +47,7 @@ def load_dicom_scan(data_path, name):
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
         [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
     preprocessing_info_file_name = os.path.join(
-        os.environ.get("OUTPUT_DIR", "/output/"),
+        prep_folder,
         '{}_preprocessing_info.txt'.format(name))
     if os.path.exists(preprocessing_info_file_name):
         os.remove(preprocessing_info_file_name)
@@ -76,14 +76,14 @@ def load_dicom_scan(data_path, name):
     return np.array(image, dtype=np.int16), np.array(spacing, dtype=np.float32)
 
 
-def load_itk_image(path):
+def load_itk_image(path, prep_folder):
     sitk_image = sitk.ReadImage(path)
     spacing = sitk_image.GetSpacing()
     origin = sitk_image.GetOrigin()
     transform = sitk_image.GetDirection()
     pixel_data = sitk.GetArrayFromImage(sitk_image)
     preprocessing_info_file_name = os.path.join(
-        os.environ.get("OUTPUT_DIR", "/output/"),
+        prep_folder,
         '{}_preprocessing_info.txt'.format(os.path.basename(os.path.normpath(path))))
     if os.path.exists(preprocessing_info_file_name):
         os.remove(preprocessing_info_file_name)
@@ -333,17 +333,17 @@ def two_lung_only(bw, spacing, max_iter=22, max_ratio=4.8):
 import time
 
 
-def step1_python(data_path, name):
+def step1_python(data_path, prep_folder, name):
     st = time.time()
     case_path = os.path.join(data_path, name)
     print("  Loading", case_path)
     if os.path.isdir(case_path):
-        scan_data = load_dicom_scan(data_path, name)
+        scan_data = load_dicom_scan(data_path, prep_folder, name)
         if scan_data is None:
             return None
         case_pixels, spacing = scan_data
     elif os.path.splitext(case_path)[-1].lower() in ('.mha', '.mhd'):
-        case_pixels, spacing = load_itk_image(case_path)
+        case_pixels, spacing = load_itk_image(case_path, prep_folder)
     else:
         raise ValueError("Unknown file type: " + case_path)
 
@@ -373,7 +373,7 @@ if __name__ == '__main__':
     patients = os.listdir(INPUT_FOLDER)
     patients.sort()
     case_pixels, m1, m2, spacing = step1_python(
-        os.path.join(INPUT_FOLDER, patients[25]))
+        os.path.join(INPUT_FOLDER, patients[25]), os.path.join(INPUT_FOLDER, patients[25]))
     plt.imshow(m1[60])
     plt.figure()
     plt.imshow(m2[60])
