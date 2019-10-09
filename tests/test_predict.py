@@ -35,7 +35,7 @@ def test_main(tmp_path, ):
     output_prep_dir = tmp_path / "prep"
     outputfile = tmp_path / "outfile.csv"
     crop_rects_outputfile = tmp_path / "croprects.csv"
-    nodule_specific_prediction_file = tmp_path / "nodules.csv"
+    output_convert_debug_file = tmp_path / "convert_debug.json"
 
     main.main(datapath=str(test_data_dir),
               outputdir=str(tmp_path),
@@ -43,7 +43,7 @@ def test_main(tmp_path, ):
               output_prep_dir=str(output_prep_dir),
               outputfile=str(outputfile),
               crop_rects_outputfile=str(crop_rects_outputfile),
-              nodule_specific_prediction_file=str(nodule_specific_prediction_file),
+              output_convert_debug_file=str(output_convert_debug_file),
               use_existing_preprocessing=True,
               skip_preprocessing=False,
               skip_detect=False,
@@ -54,4 +54,18 @@ def test_main(tmp_path, ):
     assert output_prep_dir.exists()
     assert outputfile.exists()
     assert crop_rects_outputfile.exists()
-    assert not nodule_specific_prediction_file.exists()
+    assert output_convert_debug_file.exists()
+
+    # test if skip_detect works
+    main.main(datapath=str(test_data_dir),
+              outputdir=str(tmp_path),
+              output_bbox_dir=str(output_bbox_dir),
+              output_prep_dir=str(output_prep_dir),
+              outputfile=str(outputfile),
+              crop_rects_outputfile=str(crop_rects_outputfile),
+              output_convert_debug_file=str(output_convert_debug_file),
+              use_existing_preprocessing=True,
+              skip_preprocessing=False,
+              skip_detect=True,
+              **basic_config
+              )

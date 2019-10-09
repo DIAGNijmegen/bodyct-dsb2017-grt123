@@ -8,20 +8,18 @@ dimensions = ['x', 'y', 'z']
 
 class ConvertVoxelToWorld(object):
     def __init__(self, preprocessing_info_dir, cropped_rects,
-                 output_path):
+                 output_file):
         self._conversion_parameters = {}
         self._coordinates = {}
         self._preprocessing_info_dir = preprocessing_info_dir
         self._dict_of_list_of_cropped_rects = cropped_rects
-        self._output_path = output_path
-        if not os.path.exists(output_path):
-            os.mkdir(output_path)
+        self._output_file = output_file
         self.postprocessing()
 
     def postprocessing(self):
         self.get_relative_voxel_coordinates()
         self.get_conversion_parameters()
-        for scan_idx, conversion_parameter in self._conversion_parameters.iteritems():
+        for scan_idx, conversion_parameter in self._conversion_parameters.items():
             if not all(key in conversion_parameter.keys() for key in
                        ['original_origin', 'extendbox_origin',
                         'cropped_grid_shape',
@@ -36,10 +34,10 @@ class ConvertVoxelToWorld(object):
         self.output_json()
 
     def get_relative_voxel_coordinates(self):
-        for scan_idx, cropped_rects in self._dict_of_list_of_cropped_rects.iteritems():
+        for scan_idx, cropped_rects in self._dict_of_list_of_cropped_rects.items():
             self._coordinates[scan_idx] = [
                 {voxel.format(dim): min_and_max for dim, min_and_max
-                 in boundingbox.iteritems()} for boundingbox in
+                 in boundingbox.items()} for boundingbox in
                 cropped_rects]
 
     def get_conversion_parameters(self):
@@ -53,8 +51,7 @@ class ConvertVoxelToWorld(object):
                     with open(preprocessing_info_file, 'r') as handle:
                         lines = handle.readlines()
                         for line in lines:
-                            key = line.split('=')[0]
-                            values = line.split('=')[1]
+                            key, values = line.split('=')
                             coord = values.split(',')
                             conversion_parameter[key] = {
                                 'x': float(coord[0]),
@@ -74,7 +71,7 @@ class ConvertVoxelToWorld(object):
                     preprocessing_info_file))
 
     def compute_cropped_voxel_coordinates(self):
-        for scan_idx, coords in self._coordinates.iteritems():
+        for scan_idx, coords in self._coordinates.items():
             for coord in coords:
                 coord.update({world.format(dim): [
                     c * self._conversion_parameters[scan_idx][
@@ -85,7 +82,7 @@ class ConvertVoxelToWorld(object):
                     coord[voxel.format(dim)]] for dim in dimensions})
 
     def compute_world_coordinates(self):
-        for scan_idx, coords in self._coordinates.iteritems():
+        for scan_idx, coords in self._coordinates.items():
             for coord in coords:
                 for dim in dimensions:
                     coord[world.format(dim)] = [
@@ -94,7 +91,7 @@ class ConvertVoxelToWorld(object):
                             '{}'.format(dim)] for c in
                         coord[world.format(dim)]]
 
-        for scan_idx, coords in self._coordinates.iteritems():
+        for scan_idx, coords in self._coordinates.items():
             for coord in coords:
                 coord['world_x'] = [c * self._conversion_parameters[scan_idx][
                     'rotation_matrix_x']['x'] + \
@@ -136,7 +133,6 @@ class ConvertVoxelToWorld(object):
                                                 start_and_end[1]]
 
     def output_json(self):
-        with open(os.path.join(self._output_path,
-                               'detected_nodules_in_world_and_voxel_coordinates.json'),
-                  'w') as json_handle:
-            json.dump(self._coordinates, json_handle, indent=4)
+        if self._output_file is not None:
+            with open(self._output_file, 'w') as json_handle:
+                json.dump(self._coordinates, json_handle, indent=4)

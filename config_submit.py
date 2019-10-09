@@ -5,16 +5,9 @@ config = {
     'outputdir': os.environ.get("OUTPUT_DIR", '/output/'),
     'output_bbox_dir': os.path.join(os.environ.get("OUTPUT_DIR", '/output/'), "bbox"),
     'output_prep_dir': os.path.join(os.environ.get("OUTPUT_DIR", '/output/'), "prep"),
-    'outputfile': os.path.join(
-        os.environ.get("OUTPUT_DIR", "/output/"),
-        "prediction.csv"),
-    'nodule_specific_prediction_file': os.path.join(
-        os.environ.get("OUTPUT_DIR", "/output/"),
-        "nodulespecificpredictions.csv"),
-    'crop_rects_outputfile': os.path.join(
-        os.environ.get("OUTPUT_DIR", "/output/"),
-        "crop_rects.json"),
-
+    'outputfile': None,
+    'crop_rects_outputfile': None,
+    'output_convert_debug_file': None,
     'detector_model': 'net_detector',
     'detector_param': './model/detector.ckpt',
     'classifier_model': 'net_classifier',
