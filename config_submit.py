@@ -21,7 +21,7 @@ config = {
     'classifier_param': './model/classifier.ckpt',
     'n_gpu': int(os.environ.get("N_GPUS", "1")),
     'n_worker_preprocessing': int(os.environ.get("N_PREPROCESSING_TASKS", "6")),
-    'use_exsiting_preprocessing': True,
+    'use_existing_preprocessing': True,
     'skip_preprocessing': False,
     'skip_detect': False
 }

@@ -192,9 +192,9 @@ class Finding(XMLGeneratable):
     def validate(self):
         instanceofcheck(self.id, int)
         for var in [self.x, self.y, self.z, self.probability, self.diameter_mm, self.volume_mm3]:
-            instanceofcheck(var, (float, int))
+            instanceofcheck(var, (int, float))
         if self.cancerprobability is not None:
-            instanceofcheck(self.cancerprobability, (float, int))
+            instanceofcheck(self.cancerprobability, (int, float))
         if self.extent is not None:
             lencheck(self.extent, 3)
             for element in self.extent:
