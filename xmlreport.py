@@ -335,7 +335,7 @@ class CancerInfo(XMLGeneratable):
         self.referencenoduleids = tuple(referencenoduleids)
 
     def validate(self):
-        instanceofcheck(self.casecancerprobability, float)
+        instanceofcheck(self.casecancerprobability, (int, float))
         instanceofcheck(self.referencenoduleids, (list, tuple))
         for e in self.referencenoduleids:
             instanceofcheck(e, int)
