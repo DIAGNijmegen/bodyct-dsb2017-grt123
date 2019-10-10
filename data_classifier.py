@@ -3,14 +3,10 @@ import torch
 from torch.utils.data import Dataset
 import os
 import time
-import collections
-import random
-from layers import iou
 from scipy.ndimage import zoom
 import warnings
 from scipy.ndimage.interpolation import rotate
 from layers import nms, iou
-import pandas
 
 
 class DataBowl3Classifier(Dataset):
@@ -24,8 +20,6 @@ class DataBowl3Classifier(Dataset):
         self.stride = config['stride']
         self.augtype = config['augtype']
         self.filling_value = config['filling_value']
-
-        # self.labels = np.array(pandas.read_csv(config['labelfile']))
 
         datadir = config['datadir']
         bboxpath = config['bboxpath']
@@ -57,25 +51,22 @@ class DataBowl3Classifier(Dataset):
                         isnod = True
                         break
                 pbb_label.append(isnod)
-            #             if idx.startswith()
             self.candidate_box.append(pbb)
             self.pbb_label.append(np.array(pbb_label))
         self.crop = simpleCrop(config, phase)
         self.crop_rect_map = {}
 
     def __getitem__(self, idx, split=None):
-        t = time.time()
-        np.random.seed(int(str(t % 1)[2:7]))  # seed according to time
+        np.random.seed(int(str(time.time() % 1)[2:7]))
 
         pbb = self.candidate_box[idx]
         pbb_label = self.pbb_label[idx]
         conf_list = pbb[:, 0]
         T = self.T
-        topk = self.topk
+        topk = self.topk if self.topk is not None else len(conf_list)
         img = np.load(self.filenames[idx])
         if self.random_sample and self.phase == 'train':
             chosenid = sample(conf_list, topk, T=T)
-            # chosenid = conf_list.argsort()[::-1][:topk]
         else:
             chosenid = conf_list.argsort()[::-1][:topk]
         croplist = np.zeros([topk, 1, self.crop_size[0], self.crop_size[1],
@@ -84,8 +75,6 @@ class DataBowl3Classifier(Dataset):
                               self.crop_size[1] / self.stride,
                               self.crop_size[2] / self.stride]).astype(
             'float32')
-        # padmask = np.concatenate(
-        #     [np.ones(len(chosenid)), np.zeros(self.topk - len(chosenid))])
         isnodlist = np.zeros([topk])
 
         if idx in self.crop_rect_map:
@@ -246,15 +235,9 @@ def softmax(x):
 
 def augment(sample, coord, ifflip=True, ifrotate=True, ifswap=True,
             filling_value=0):
-    #                     angle1 = np.random.rand()*180
+
     if ifrotate:
-        validrot = False
-        counter = 0
         angle1 = np.random.rand() * 180
-        size = np.array(sample.shape[2:4]).astype('float')
-        rotmat = np.array(
-            [[np.cos(angle1 / 180 * np.pi), -np.sin(angle1 / 180 * np.pi)],
-             [np.sin(angle1 / 180 * np.pi), np.cos(angle1 / 180 * np.pi)]])
         sample = rotate(sample, angle1, axes=(2, 3), reshape=False,
                         cval=filling_value)
 
@@ -272,4 +255,5 @@ def augment(sample, coord, ifflip=True, ifrotate=True, ifswap=True,
             sample[:, ::flipid[0], ::flipid[1], ::flipid[2]])
         coord = np.ascontiguousarray(
             coord[:, ::flipid[0], ::flipid[1], ::flipid[2]])
+
     return sample, coord

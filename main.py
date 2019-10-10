@@ -173,6 +173,17 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
 
     # TODO extract ALL nodules instead of only top5...
 
+    # extract nodule confidences and compute nodule probabilities for all cases
+    def sigmoid(x):
+        return 1. / (1. + np.exp(-x))
+
+    def filter_and_sort_confidences(conf_list, topk=None):
+        topk = topk if topk is not None else len(conf_list)
+        chosenid = conf_list.argsort()[::-1][:topk]
+        return conf_list[chosenid]
+
+    nodule_probs = {fname : sigmoid(filter_and_sort_confidences(dataset.candidate_box[dataset.src_file_names.index(fname)][:, 0], topk=dataset.topk)).tolist() for fname in testsplit}
+
     # construct output reports based on image-level findings
     time_diff = datetime.now() - execution_starttime
     computation_time = (time_diff.seconds + time_diff.microseconds / float(10 ** 6)) / len(image_infos)
@@ -197,7 +208,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
             coords = np.array([converter._coordinates[seriesuid][idx]["world_{}".format(e)] for e in ["x", "y", "z"]]).T
             center, extent = coords[1, :], coords[1, :] - coords[0, :]
             finding = xmlreport.Finding(id=idx, x=center[0], y=center[1], z=center[2],
-                                        probability=0, diameter_mm=-1, volume_mm3=-1,
+                                        probability=nodule_probs[seriesuid][idx], diameter_mm=-1, volume_mm3=-1,
                                         extent=extent.tolist(), cancerprobability=float(cancer_prob))
             findings.append(finding)
 
