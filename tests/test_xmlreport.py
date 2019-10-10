@@ -23,22 +23,26 @@ def compare_reports(reporta, reportb, origin_atol=1e-3, prob_atol=1e-4):
 
     assert len(reporta.findings) == len(reportb.findings)
     for f1, f2 in zip(reporta.findings, reportb.findings):
-        for attr in ["id", "x", "y", "z", "diameter_mm", "volume_mm3"]:
-            assert getattr(f1, attr) == getattr(f2, attr)
-        assert np.isclose(f1.probability, f2.probability, atol=prob_atol)
-        a, b = f1.extent, f2.extent
-        if a is None:
-            assert b is None
-        else:
-            assert len(a) == len(b)
-            for aa, bb in zip(a, b):
-                assert np.isclose(aa, bb, atol=1e-8)
-        if f1.cancerprobability is None:
-            assert f2.cancerprobability is None
-        else:
-            assert np.isclose(
-                f1.cancerprobability, f2.cancerprobability, atol=prob_atol
-            )
+        compare_finding(f1, f2, prob_atol=prob_atol)
+
+
+def compare_finding(f1, f2, prob_atol=1e-5,):
+    for attr in ["id", "x", "y", "z", "diameter_mm", "volume_mm3"]:
+        assert getattr(f1, attr) == getattr(f2, attr)
+    assert np.isclose(f1.probability, f2.probability, atol=prob_atol)
+    a, b = f1.extent, f2.extent
+    if a is None:
+        assert b is None
+    else:
+        assert len(a) == len(b)
+        for aa, bb in zip(a, b):
+            assert np.isclose(aa, bb, atol=1e-8)
+    if f1.cancerprobability is None:
+        assert f2.cancerprobability is None
+    else:
+        assert np.isclose(
+            f1.cancerprobability, f2.cancerprobability, atol=prob_atol
+        )
 
 
 def check_equivalence_and_properties(sampleA, sampleA2, sampleB):

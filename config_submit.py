@@ -12,6 +12,8 @@ config = {
     'detector_param': './model/detector.ckpt',
     'classifier_model': 'net_classifier',
     'classifier_param': './model/classifier.ckpt',
+    'classifier_max_nodules_to_include': None,
+    'classifier_num_nodules_for_cancer_decision': 5,
     'n_gpu': int(os.environ.get("N_GPUS", "1")),
     'n_worker_preprocessing': int(os.environ.get("N_PREPROCESSING_TASKS", "6")),
     'use_existing_preprocessing': True,

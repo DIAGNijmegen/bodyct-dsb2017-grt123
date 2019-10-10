@@ -36,7 +36,8 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
          detector_model, detector_param, classifier_model, classifier_param,
          n_gpu, n_worker_preprocessing, outputfile=None,
          crop_rects_outputfile=None, output_convert_debug_file=None,
-         use_existing_preprocessing=True, skip_preprocessing=False, skip_detect=False, ):
+         use_existing_preprocessing=True, skip_preprocessing=False, skip_detect=False,
+         classifier_max_nodules_to_include=None, classifier_num_nodules_for_cancer_decision=5):
     execution_starttime = datetime.now()
     use_gpu = n_gpu > 0
 
@@ -91,7 +92,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     print "Applying case model..."
 
     casemodel = import_module(classifier_model.split('.py')[0])
-    casenet = casemodel.CaseNet(topk=5)
+    casenet = casemodel.CaseNet(topk=classifier_num_nodules_for_cancer_decision)
     config2 = casemodel.config
     checkpoint = torch.load(classifier_param)
     casenet.load_state_dict(checkpoint['state_dict'])
@@ -131,8 +132,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
 
     config2['bboxpath'] = output_bbox_dir
     config2['datadir'] = output_prep_dir
-    # extract ALL nodules instead of only top5...
-    config2['topk'] = None
+    config2['topk'] = classifier_max_nodules_to_include
 
     dataset = DataBowl3Classifier(testsplit, config2, phase='test')
     predlist, nodule_cancer_probabilities = test_casenet(casenet, dataset)
@@ -198,8 +198,11 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         imageinfo = xmlreport.ImageInfo(dimensions=dimensions, voxelsize=voxelsize, origin=origin,
                               orientation=orientation,
                               patientuid="", studyuid="", seriesuid="1")
+
+        referencenoduleids = range(min(classifier_num_nodules_for_cancer_decision, len(nodule_probs[seriesuid])))
         cancerinfo = xmlreport.CancerInfo(casecancerprobability=cancer_probabilities[seriesuid],
-                                          referencenoduleids=[0, 1, 2, 3, 4])
+                                          referencenoduleids=referencenoduleids)
+
 
         # TODO populate findings... (what about: extent???)
         findings = []
