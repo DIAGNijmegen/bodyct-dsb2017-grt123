@@ -1,16 +1,13 @@
 from __future__ import print_function
 
 import threading
-import numpy as np  # linear algebra
-import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
-import dicom
+import numpy as np
 import os
 import sys
 import scipy.ndimage
-# import matplotlib.pyplot as plt
 import SimpleITK as sitk
 
-from skimage import measure, morphology
+from skimage import measure
 
 try:
     import image_loader as diag_image_loader
