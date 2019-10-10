@@ -110,10 +110,7 @@ class DataBowl3Classifier(Dataset):
                 coordlist).float()
 
     def __len__(self):
-        if self.phase != 'test':
-            return len(self.candidate_box)
-        else:
-            return len(self.candidate_box)
+        return len(self.candidate_box)
 
 
 class simpleCrop():

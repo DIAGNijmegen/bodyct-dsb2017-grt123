@@ -161,6 +161,7 @@ class CaseNet(nn.Module):
         self.dropout = nn.Dropout(0.5)
         self.baseline = nn.Parameter(torch.Tensor([-30.0]).float())
         self.Relu = nn.ReLU()
+        self.topk = topk
 
     def forward(self, xlist, coordlist):
         #         xlist: n x k x 1x 96 x 96 x 96
@@ -186,6 +187,6 @@ class CaseNet(nn.Module):
         out = torch.sigmoid(self.fc2(out))
         out = out.view(xsize[0], xsize[1])
         base_prob = torch.sigmoid(self.baseline)
-        casePred = 1 - torch.prod(1 - out, dim=1) * (
+        casePred = 1 - torch.prod(1 - out[:, :self.topk], dim=1) * (
                     1 - base_prob.expand(out.size()[0]))
         return nodulePred, casePred, out

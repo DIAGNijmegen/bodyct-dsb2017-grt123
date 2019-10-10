@@ -131,6 +131,8 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
 
     config2['bboxpath'] = output_bbox_dir
     config2['datadir'] = output_prep_dir
+    # extract ALL nodules instead of only top5...
+    config2['topk'] = None
 
     dataset = DataBowl3Classifier(testsplit, config2, phase='test')
     predlist, nodule_cancer_probabilities = test_casenet(casenet, dataset)
@@ -170,9 +172,6 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     cparams = converter._conversion_parameters
     image_infos = {key: extract_info(cparams[key]) for key in cparams.keys()}
 
-
-    # TODO extract ALL nodules instead of only top5...
-
     # extract nodule confidences and compute nodule probabilities for all cases
     def sigmoid(x):
         return 1. / (1. + np.exp(-x))
@@ -202,7 +201,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         cancerinfo = xmlreport.CancerInfo(casecancerprobability=cancer_probabilities[seriesuid],
                                           referencenoduleids=[0, 1, 2, 3, 4])
 
-        # TODO populate findings... nodule_prob (what about: extent???)
+        # TODO populate findings... (what about: extent???)
         findings = []
         for idx, cancer_prob in enumerate(nodule_cancer_probabilities[seriesuid]):
             coords = np.array([converter._coordinates[seriesuid][idx]["world_{}".format(e)] for e in ["x", "y", "z"]]).T
