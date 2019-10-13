@@ -278,9 +278,10 @@ class ImageInfo(XMLGeneratable):
         lencheck(self.orientation, 9)
         for element in self.orientation:
             instanceofcheck(element, (int, float))
-        for var in (self.patientuid, self.studyuid, self.seriesuid):
+        for var in (self.patientuid, self.studyuid):
             instanceofcheck(var, str)
             matchcheck(var, r"^[\d.]*$")
+        instanceofcheck(self.seriesuid, str)
 
     def xml_element(self):
         info = et.Element("ImageInfo")

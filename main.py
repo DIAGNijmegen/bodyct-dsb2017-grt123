@@ -4,12 +4,13 @@ from config_submit import config as config_submit
 import numpy as np
 import json
 import os
+import re
 from datetime import datetime
 import subprocess as sp
 import torch
 from torch.nn import DataParallel
 from torch.utils.data import DataLoader
-from torch.autograd import Variable
+from torch.utils.data.dataloader import default_collate
 
 from data_detector import DataBowl3Detector, collate
 from data_classifier import DataBowl3Classifier
@@ -33,11 +34,13 @@ def get_current_git_hash():
 
 
 def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
-         detector_model, detector_param, classifier_model, classifier_param,
-         n_gpu, n_worker_preprocessing, outputfile=None,
+         detector_model="net_detector", detector_param="./model/detector.ckpt",
+         classifier_model="net_classifier", classifier_param="./model/classifier.ckpt",
+         n_gpu=1, n_worker_preprocessing=6, outputfile=None,
          crop_rects_outputfile=None, output_convert_debug_file=None,
          use_existing_preprocessing=True, skip_preprocessing=False, skip_detect=False,
-         classifier_max_nodules_to_include=None, classifier_num_nodules_for_cancer_decision=5):
+         classifier_max_nodules_to_include=None, classifier_num_nodules_for_cancer_decision=5,
+         data_filter=None):
     execution_starttime = datetime.now()
     use_gpu = n_gpu > 0
 
@@ -45,6 +48,11 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     testsplit = [f for f in os.listdir(datapath)
                  if os.path.isdir(os.path.join(datapath, f)) or os.path.splitext(f)[
                      1].lower() in (".mhd", ".mha")]
+    if data_filter is not None:
+        testsplit_original_size = len(testsplit)
+        testsplit = [e for e in testsplit if re.match(data_filter, e)]
+        print("Matched {}/{} files in datapath using: {}\n{}".format(len(testsplit), testsplit_original_size, data_filter, testsplit))
+
     # If there are no mhd or mha files and no folders in the input dir, we assume that a folder with dcm files is provided
     if not testsplit:
         testsplit = [os.path.basename(datapath)]
@@ -104,11 +112,18 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
 
 
     def test_casenet(model, testset):
+        def custom_collate_fn(batch):
+            if len(batch[0][0]) == 0:
+                return None, None
+            else:
+                return default_collate(batch)
+
         data_loader = DataLoader(
             testset,
             batch_size=1,
             shuffle=False,
             num_workers=0,
+            collate_fn=custom_collate_fn,
             pin_memory=True)
         model.eval()
         nodule_cancer_probabilities = {}
@@ -116,16 +131,18 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
 
         with torch.no_grad():
             for i, (x, coord) in enumerate(data_loader):
-                coord = Variable(coord, volatile=True)
-                x = Variable(x, volatile=True)
+                # if nodules for case i are > 0
+                if x is not None:
+                    if use_gpu:
+                        coord = coord.cuda()
+                        x = x.cuda()
 
-                if use_gpu:
-                    coord = coord.cuda()
-                    x = x.cuda()
-
-                nodulePred, casePred, out = model(x, coord)
-                nodule_cancer_probabilities[i] = out.data[0, :].cpu().numpy()
-                predlist.append(casePred.data.cpu().numpy())
+                    nodulePred, casePred, out = model(x, coord)
+                    nodule_cancer_probabilities[i] = out.data[0, :].cpu().numpy()
+                    predlist.append(casePred.data.cpu().numpy())
+                else:
+                    nodule_cancer_probabilities[i] = []
+                    predlist.append(float(torch.sigmoid(model.module.baseline).cpu().numpy()[0]))
         predlist = np.concatenate(predlist)
         return predlist, nodule_cancer_probabilities
 
@@ -194,21 +211,21 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
                           datetimeofexecution=execution_starttime.strftime("%m/%d/%Y %H:%M:%S"),
                           trainingset1="", trainingset2="", coordinatesystem="World",
                           computationtimeinseconds=computation_time)
-        # TODO FIX seriesuid
+
+        seriesuidplain = seriesuid.replace(".mhd", "").replace(".mha", "")
         imageinfo = xmlreport.ImageInfo(dimensions=dimensions, voxelsize=voxelsize, origin=origin,
                               orientation=orientation,
-                              patientuid="", studyuid="", seriesuid="1")
+                              patientuid="", studyuid="", seriesuid=seriesuidplain)
 
         referencenoduleids = range(min(classifier_num_nodules_for_cancer_decision, len(nodule_probs[seriesuid])))
         cancerinfo = xmlreport.CancerInfo(casecancerprobability=cancer_probabilities[seriesuid],
                                           referencenoduleids=referencenoduleids)
 
 
-        # TODO populate findings... (what about: extent???)
         findings = []
         for idx, cancer_prob in enumerate(nodule_cancer_probabilities[seriesuid]):
             coords = np.array([converter._coordinates[seriesuid][idx]["world_{}".format(e)] for e in ["x", "y", "z"]]).T
-            center, extent = coords[1, :], coords[1, :] - coords[0, :]
+            center, extent = coords[1, :], coords[2, :] - coords[0, :]
             finding = xmlreport.Finding(id=idx, x=center[0], y=center[1], z=center[2],
                                         probability=nodule_probs[seriesuid][idx], diameter_mm=-1, volume_mm3=-1,
                                         extent=extent.tolist(), cancerprobability=float(cancer_prob))
