@@ -58,9 +58,9 @@ def check_equivalence_and_properties(sampleA, sampleA2, sampleB):
 def test_full_report_generation():
     finding = xmlreport.Finding(0, 2.0, 3.0, 4.0, 0.5, 20.0, 10.0)
     lungcad = xmlreport.LungCad(
-        revision="",
+        revision="abcdef01234567890aaaaaaaaaaaaaaaaaaaaaaa",
         name="GPUCAD",
-        datetimeofexecution="",
+        datetimeofexecution="01/01/1900 00:00:00",
         trainingset1="",
         trainingset2="",
         coordinatesystem="World",
@@ -141,27 +141,27 @@ def test_equivalence_imageinfo():
 
 def test_equivalence_lungcad():
     lungcad = xmlreport.LungCad(
-        revision="",
+        revision="abcdef01234567890aaaaaaaaaaaaaaaaaaaaaaa",
         name="GPUCAD",
-        datetimeofexecution="",
+        datetimeofexecution="01/01/1900 00:00:00",
         trainingset1="",
         trainingset2="",
         coordinatesystem="World",
         computationtimeinseconds=33.0,
     )
     lungcad2 = xmlreport.LungCad(
-        revision="",
+        revision="abcdef01234567890aaaaaaaaaaaaaaaaaaaaaaa",
         name="GPUCAD",
-        datetimeofexecution="",
+        datetimeofexecution="01/01/1900 00:00:00",
         trainingset1="",
         trainingset2="",
         coordinatesystem="World",
         computationtimeinseconds=33.0,
     )
     lungcad3 = xmlreport.LungCad(
-        revision="",
+        revision="abcdef01234567890aaaaaaaaaaaaaaaaaaaaaaa",
         name="GPUCAD2",
-        datetimeofexecution="",
+        datetimeofexecution="01/01/1900 00:00:00",
         trainingset1="",
         trainingset2="",
         coordinatesystem="World",
@@ -210,9 +210,9 @@ def test_writing_and_reading_lungcadreports_xml(tmp_path, cancerinfo):
         findings.append(xmlreport.Finding(i, 2.0, 3.0, 4.0, 0.5, 20.0, 10.0))
     findings.append(xmlreport.Finding(3, 1, 2, 3, 0.5, 0.1, -1, (2, 3, 4), 0.7))
     lungcad = xmlreport.LungCad(
-        revision="",
+        revision="abcdef01234567890aaaaaaaaaaaaaaaaaaaaaaa",
         name="GPUCAD",
-        datetimeofexecution="",
+        datetimeofexecution="01/01/1900 00:00:00",
         trainingset1="",
         trainingset2="",
         coordinatesystem="World",

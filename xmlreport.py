@@ -131,7 +131,13 @@ class LungCad(XMLGeneratable):
         self.computationtimeinseconds = computationtimeinseconds
 
     def validate(self):
-        pass
+        for attr in ["revision", "name", "datetimeofexecution", "trainingset1", "trainingset2", "coordinatesystem"]:
+            instanceofcheck(getattr(self, attr), str)
+        assert len(self.name) > 0
+        matchcheck(self.datetimeofexecution, r"^\d\d/\d\d/\d\d\d\d\s\d\d:\d\d:\d\d$")
+        matchcheck(self.revision, r"^[0-9a-f]{40}$")
+        matchcheck(self.coordinatesystem, r"^World$")
+        instanceofcheck(self.computationtimeinseconds, (int, float))
 
     def xml_element(self):
         info = et.Element("LungCAD")
@@ -369,7 +375,7 @@ class CancerInfo(XMLGeneratable):
 
 if __name__ == "__main__":
     finding = Finding(0, 2., 3., 4., 0.5, 20., 10.)
-    lungcad = LungCad(revision= "", name="GPUCAD", datetimeofexecution="", trainingset1="", trainingset2="", coordinatesystem="World", computationtimeinseconds=33.0)
+    lungcad = LungCad(revision="abcdef01234567890aaaaaaaaaaaaaaaaaaaaaaa", name="GPUCAD", datetimeofexecution="01/01/1900 00:00:00", trainingset1="", trainingset2="", coordinatesystem="World", computationtimeinseconds=33.0)
     imageinfo = ImageInfo(dimensions=(0,0,0), voxelsize=(0.,0.,0.), origin=(0.,0.,0.), orientation=(0,0,0,0,0,0,0,0,0.5), patientuid="34.2.32", studyuid="232.32.3", seriesuid="424.35")
     cancerinfo = CancerInfo(casecancerprobability=0.5, referencenoduleids=[1,2,3,4,5])
 

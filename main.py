@@ -203,7 +203,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     computation_time = (time_diff.seconds + time_diff.microseconds / float(10 ** 6)) / len(image_infos)
 
     reports = []
-    git_hash = get_current_git_hash(),
+    git_hash = get_current_git_hash()
     for seriesuid, (dimensions, orientation, origin, voxelsize) in image_infos.items():
         lungcad = xmlreport.LungCad(revision=git_hash, name="grt123",
                           datetimeofexecution=execution_starttime.strftime("%m/%d/%Y %H:%M:%S"),
