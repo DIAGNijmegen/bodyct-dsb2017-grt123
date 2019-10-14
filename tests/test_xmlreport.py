@@ -19,7 +19,8 @@ def compare_reports(reporta, reportb, origin_atol=1e-3, prob_atol=1e-4):
         reporta.imageinfo.origin, reportb.imageinfo.origin, atol=origin_atol
     )
 
-    assert reporta.cancerinfo == reportb.cancerinfo
+    assert reporta.cancerinfo.referencenoduleids == reportb.cancerinfo.referencenoduleids
+    assert np.isclose(reporta.cancerinfo.casecancerprobability, reportb.cancerinfo.casecancerprobability, atol=prob_atol)
 
     assert len(reporta.findings) == len(reportb.findings)
     for f1, f2 in zip(reporta.findings, reportb.findings):
@@ -239,3 +240,17 @@ def test_writing_and_reading_lungcadreports_xml(tmp_path, cancerinfo):
     reportB = xmlreport.LungCadReport.from_xml(ET.parse(testfile))
 
     compare_reports(report, reportB)
+
+
+def test_get_current_git_hash():
+    hash = xmlreport.get_current_git_hash()
+    lungcad = xmlreport.LungCad(
+        revision=hash,
+        name="GPUCAD",
+        datetimeofexecution="01/01/1900 00:00:00",
+        trainingset1="",
+        trainingset2="",
+        coordinatesystem="World",
+        computationtimeinseconds=33.0,
+    )
+    lungcad.validate()

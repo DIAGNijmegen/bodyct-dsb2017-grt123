@@ -7,9 +7,11 @@ try:
 except ImportError:
     from backports import lzma
 import tarfile
-from test_xmlreport import compare_finding
+from test_xmlreport import compare_finding, compare_reports
+import xmlreport
 import numpy as np
 import torch
+import xml.etree.ElementTree as et
 
 
 def ensure_testdata_unpacked(dataset="inputs"):
@@ -187,3 +189,24 @@ def test_num_nodules(tmp_path, nodules):
     assert len(results[0].cancerinfo.referencenoduleids) == min(nodules, 5)
     if nodules == 0:
         assert np.isclose(results[0].cancerinfo.casecancerprobability, 0)
+
+
+def test_matches_ref_report(tmp_path):
+    ref_file = Path(__file__).parent / "resources" / "ref.xml"
+    assert ref_file.exists()
+    ref_report = xmlreport.LungCadReport.from_xml(et.parse(str(ref_file)))
+    test_data_dir = ensure_testdata_unpacked()
+    cfg = get_config(tmp_path, test_data_dir)
+    results = main.main(
+        skip_detect=False,
+        skip_preprocessing=False,
+        data_filter=r".*.mhd",
+        **cfg
+    )
+    assert len(results) == 1
+    result = results[0]
+    assert len(ref_report.findings) == 5
+    assert len(result.findings) == 9
+    ref_report.lungcad = result.lungcad
+    result.findings = result.findings[:5]
+    compare_reports(ref_report, result)

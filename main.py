@@ -6,7 +6,6 @@ import json
 import os
 import re
 from datetime import datetime
-import subprocess as sp
 import torch
 from torch.nn import DataParallel
 from torch.utils.data import DataLoader
@@ -23,14 +22,6 @@ from convert_voxel_to_world import ConvertVoxelToWorld
 
 import xmlreport
 import xml.etree.ElementTree as ET
-
-
-def get_current_git_hash():
-    command = ['git', 'log', '-n', '1', '--pretty=format:"%H"']
-    p = sp.Popen(command, stderr=None, stdout=sp.PIPE)
-    stdout, _ = p.communicate()
-    p.stdout.close()
-    return stdout[1:-1].decode('utf-8')
 
 
 def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
@@ -203,7 +194,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     computation_time = (time_diff.seconds + time_diff.microseconds / float(10 ** 6)) / len(image_infos)
 
     reports = []
-    git_hash = get_current_git_hash()
+    git_hash = xmlreport.get_current_git_hash()
     for seriesuid, (dimensions, orientation, origin, voxelsize) in image_infos.items():
         lungcad = xmlreport.LungCad(revision=git_hash, name="grt123",
                           datetimeofexecution=execution_starttime.strftime("%m/%d/%Y %H:%M:%S"),

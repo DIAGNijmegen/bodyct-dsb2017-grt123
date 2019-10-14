@@ -3,6 +3,15 @@ from xml.etree import ElementTree
 from xml.dom import minidom
 import re
 from abc import ABCMeta, abstractmethod
+import subprocess as sp
+
+
+def get_current_git_hash():
+    command = ['git', 'log', '-n', '1', '--pretty=format:"%H"']
+    p = sp.Popen(command, stderr=None, stdout=sp.PIPE)
+    stdout, _ = p.communicate()
+    p.stdout.close()
+    return str(stdout[1:-1].decode('utf-8'))
 
 
 class abstractstatic(staticmethod):
@@ -371,13 +380,3 @@ class CancerInfo(XMLGeneratable):
         return "casecancerprobability: {} referencenoduleids: {}".format(
             self.casecancerprobability,
             self.referencenoduleids)
-
-
-if __name__ == "__main__":
-    finding = Finding(0, 2., 3., 4., 0.5, 20., 10.)
-    lungcad = LungCad(revision="abcdef01234567890aaaaaaaaaaaaaaaaaaaaaaa", name="GPUCAD", datetimeofexecution="01/01/1900 00:00:00", trainingset1="", trainingset2="", coordinatesystem="World", computationtimeinseconds=33.0)
-    imageinfo = ImageInfo(dimensions=(0,0,0), voxelsize=(0.,0.,0.), origin=(0.,0.,0.), orientation=(0,0,0,0,0,0,0,0,0.5), patientuid="34.2.32", studyuid="232.32.3", seriesuid="424.35")
-    cancerinfo = CancerInfo(casecancerprobability=0.5, referencenoduleids=[1,2,3,4,5])
-
-    report = LungCadReport(lungcad, imageinfo, [finding, finding], cancerinfo=cancerinfo)
-    print(prettify(report.xml_element()))
