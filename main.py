@@ -110,7 +110,6 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         casenet = casenet.cuda()
     casenet = DataParallel(casenet)
 
-
     def test_casenet(model, testset):
         def custom_collate_fn(batch):
             if len(batch[0][0]) == 0:
@@ -142,10 +141,9 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
                     predlist.append(casePred.data.cpu().numpy())
                 else:
                     nodule_cancer_probabilities[i] = []
-                    predlist.append(float(torch.sigmoid(model.module.baseline).cpu().numpy()[0]))
+                    predlist.append(torch.sigmoid(model.module.baseline).cpu().numpy())
         predlist = np.concatenate(predlist)
         return predlist, nodule_cancer_probabilities
-
 
     config2['bboxpath'] = output_bbox_dir
     config2['datadir'] = output_prep_dir

@@ -91,9 +91,9 @@ def write_image_info_to_file(fname, transform, origin, spacing, shape):
                                                  float(spacing[1]),
                                                  float(spacing[0])))
         handle.write(
-            'original_shape={},{},{}\n'.format(float(shape[2]),
-                                               float(shape[1]),
-                                               float(shape[0])))
+            'original_shape={},{},{}\n'.format(int(shape[2]),
+                                               int(shape[1]),
+                                               int(shape[0])))
 
 
 def binarize_per_slice(image, spacing, intensity_th=-600, sigma=1, area_th=30,

@@ -143,4 +143,4 @@ def test_num_nodules(tmp_path, nodules):
     assert len(results[0].findings) == nodules
     assert len(results[0].cancerinfo.referencenoduleids) == min(nodules, 5)
     if nodules == 0:
-        assert results[0].cancerinfo.casecancerprobability == 0
+        assert np.isclose(results[0].cancerinfo.casecancerprobability, 0)
