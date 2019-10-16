@@ -19,8 +19,11 @@ def compare_reports(reporta, reportb, origin_atol=1e-3, prob_atol=1e-4):
         reporta.imageinfo.origin, reportb.imageinfo.origin, atol=origin_atol
     )
 
-    assert reporta.cancerinfo.referencenoduleids == reportb.cancerinfo.referencenoduleids
-    assert np.isclose(reporta.cancerinfo.casecancerprobability, reportb.cancerinfo.casecancerprobability, atol=prob_atol)
+    if reporta.cancerinfo is None:
+        assert reportb.cancerinfo is None
+    else:
+        assert reporta.cancerinfo.referencenoduleids == reportb.cancerinfo.referencenoduleids
+        assert np.isclose(reporta.cancerinfo.casecancerprobability, reportb.cancerinfo.casecancerprobability, atol=prob_atol)
 
     assert len(reporta.findings) == len(reportb.findings)
     for f1, f2 in zip(reporta.findings, reportb.findings):
