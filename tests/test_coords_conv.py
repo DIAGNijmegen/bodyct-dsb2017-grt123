@@ -1,8 +1,10 @@
-from test_predict import ensure_testdata_unpacked
+from test_predict import ensure_testdata_unpacked, get_config
 from pathlib2 import Path
 import numpy as np
 import SimpleITK as sitk
 import json
+import main
+import pytest
 
 
 def get_info(fname):
@@ -94,3 +96,27 @@ def test_coord_relative_to_world():
             plt.scatter(int(coord[2]), int(coord[1]), s=3, c='red', marker='o')  # x, y
             plt.savefig(str(screensdir / "coord{}.png".format(i)), bbox_inches="tight")
             plt.close()
+
+
+def test_correct_imageinfos_are_created(tmp_path):
+    test_data_dir = ensure_testdata_unpacked()
+    cfg = get_config(tmp_path, test_data_dir)
+    res_dir = Path(__file__).parent / "resources"
+    mhd_file = res_dir / "inputs" / "lidc.mhd"
+    with pytest.raises(IOError):
+        main.main(
+            skip_detect=True,
+            skip_preprocessing=False,
+            **cfg
+        )
+    image = sitk.ReadImage(str(mhd_file))
+
+    for f in ["lidc-dcm", "lidc.mhd", "lidc.mha"]:
+        info_file = tmp_path / "prep" / (f + "_preprocessing_info.txt")
+        assert info_file.exists()
+        info = get_info(str(info_file))
+
+        assert np.allclose(info["rotation_matrix"], np.array(image.GetDirection()).reshape((3,3)))
+        assert np.allclose(info["origin"], np.array(image.GetOrigin()))
+        assert np.allclose(info["spacing"], np.array(image.GetSpacing()))
+        assert np.allclose(info["shape"], np.array(image.GetSize()))

@@ -43,11 +43,12 @@ def load_dicom_scan(data_path, prep_folder, name):
     print("case_path={}, data_path={}, name={}".format(case_path, data_path, name))
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
         [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
+    shape = [e for e in reversed(image.shape)]
     preprocessing_info_file_name = os.path.join(
         prep_folder,
         '{}_preprocessing_info.txt'.format(name))
 
-    write_image_info_to_file(preprocessing_info_file_name, transform, origin, spacing, image.shape)
+    write_image_info_to_file(preprocessing_info_file_name, transform, origin, spacing, shape)
 
     return np.array(image, dtype=np.int16), np.array(spacing, dtype=np.float32)
 
@@ -57,12 +58,13 @@ def load_itk_image(path, prep_folder):
     spacing = sitk_image.GetSpacing()
     origin = sitk_image.GetOrigin()
     transform = np.array(sitk_image.GetDirection()).reshape((3, 3))
+    shape = sitk_image.GetSize()
     pixel_data = sitk.GetArrayFromImage(sitk_image)
     preprocessing_info_file_name = os.path.join(
         prep_folder,
         '{}_preprocessing_info.txt'.format(os.path.basename(os.path.normpath(path))))
 
-    write_image_info_to_file(preprocessing_info_file_name, transform, origin, spacing, pixel_data.shape)
+    write_image_info_to_file(preprocessing_info_file_name, transform, origin, spacing, shape)
 
     return np.array(pixel_data, dtype=np.int16), np.array(
         sitk_image.GetSpacing(), dtype=np.float32)
@@ -71,17 +73,17 @@ def load_itk_image(path, prep_folder):
 def write_image_info_to_file(fname, transform, origin, spacing, shape):
     with open(fname, 'w') as handle:
         handle.write(
-            'rotation_matrix_x={},{},{}\n'.format(float(transform[0][0]),
-                                                  float(transform[0][1]),
-                                                  float(transform[0][2])))
-        handle.write(
-            'rotation_matrix_y={},{},{}\n'.format(float(transform[1][0]),
-                                                  float(transform[1][1]),
-                                                  float(transform[1][2])))
-        handle.write(
-            'rotation_matrix_z={},{},{}\n'.format(float(transform[2][0]),
+            'rotation_matrix_x={},{},{}\n'.format(float(transform[2][2]),
                                                   float(transform[2][1]),
-                                                  float(transform[2][2])))
+                                                  float(transform[2][0])))
+        handle.write(
+            'rotation_matrix_y={},{},{}\n'.format(float(transform[1][2]),
+                                                  float(transform[1][1]),
+                                                  float(transform[1][0])))
+        handle.write(
+            'rotation_matrix_z={},{},{}\n'.format(float(transform[0][2]),
+                                                  float(transform[0][1]),
+                                                  float(transform[0][0])))
         handle.write(
             'original_origin={},{},{}\n'.format(float(origin[2]),
                                                 float(origin[1]),
