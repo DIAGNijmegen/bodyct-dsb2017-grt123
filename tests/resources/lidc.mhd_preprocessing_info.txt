@@ -3,6 +3,6 @@ rotation_matrix_y=0.0,1.0,0.0
 rotation_matrix_z=0.0,0.0,1.0
 original_origin=-228.800003052,-210.0,-379.0
 original_spacing=0.820312023163,0.820312023163,2.5
-original_shape=512,512,140
+original_shape=140,512,512
 extendbox_origin=37,129,15
 cropped_grid_shape=330,212,295

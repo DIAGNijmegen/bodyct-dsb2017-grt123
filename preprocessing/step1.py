@@ -36,6 +36,17 @@ class ParallelCaller(object):
         return self.__result
 
 
+def load_image(data_path, prep_folder, name):
+    case_path = os.path.join(data_path, name)
+    print("  Loading", case_path)
+    if os.path.isdir(case_path):
+        return load_dicom_scan(data_path, prep_folder, name)
+    elif os.path.splitext(case_path)[-1].lower() in ('.mha', '.mhd'):
+        return load_itk_image(case_path, prep_folder)
+    else:
+        raise ValueError("Unknown file type: " + case_path)
+
+
 def load_dicom_scan(data_path, prep_folder, name):
     if diag_image_loader is None:
         return None
@@ -43,22 +54,22 @@ def load_dicom_scan(data_path, prep_folder, name):
     print("case_path={}, data_path={}, name={}".format(case_path, data_path, name))
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
         [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
-    shape = [e for e in reversed(image.shape)]
+    shape = image.shape
     preprocessing_info_file_name = os.path.join(
         prep_folder,
         '{}_preprocessing_info.txt'.format(name))
 
-    write_image_info_to_file(preprocessing_info_file_name, transform, origin, spacing, shape)
+    write_image_info_to_file(preprocessing_info_file_name, transform, origin, spacing, shape)  # inverts all store as x, y, z
 
     return np.array(image, dtype=np.int16), np.array(spacing, dtype=np.float32)
 
 
 def load_itk_image(path, prep_folder):
     sitk_image = sitk.ReadImage(path)
-    spacing = sitk_image.GetSpacing()
-    origin = sitk_image.GetOrigin()
-    transform = np.array(sitk_image.GetDirection()).reshape((3, 3))
-    shape = sitk_image.GetSize()
+    spacing = [e for e in reversed(sitk_image.GetSpacing())]
+    origin = [e for e in reversed(sitk_image.GetOrigin())]
+    transform = np.array([e for e in reversed(sitk_image.GetDirection())]).reshape((3, 3))
+    shape = [e for e in reversed(sitk_image.GetSize())]
     pixel_data = sitk.GetArrayFromImage(sitk_image)
     preprocessing_info_file_name = os.path.join(
         prep_folder,
@@ -66,8 +77,7 @@ def load_itk_image(path, prep_folder):
 
     write_image_info_to_file(preprocessing_info_file_name, transform, origin, spacing, shape)
 
-    return np.array(pixel_data, dtype=np.int16), np.array(
-        sitk_image.GetSpacing(), dtype=np.float32)
+    return np.array(pixel_data, dtype=np.int16), np.array(spacing, dtype=np.float32)
 
 
 def write_image_info_to_file(fname, transform, origin, spacing, shape):
@@ -321,17 +331,7 @@ import time
 
 def step1_python(data_path, prep_folder, name):
     st = time.time()
-    case_path = os.path.join(data_path, name)
-    print("  Loading", case_path)
-    if os.path.isdir(case_path):
-        scan_data = load_dicom_scan(data_path, prep_folder, name)
-        if scan_data is None:
-            return None
-        case_pixels, spacing = scan_data
-    elif os.path.splitext(case_path)[-1].lower() in ('.mha', '.mhd'):
-        case_pixels, spacing = load_itk_image(case_path, prep_folder)
-    else:
-        raise ValueError("Unknown file type: " + case_path)
+    case_pixels, spacing = load_image(data_path, prep_folder, name)
 
     print("binarize...", time.time() - st)
     bw = binarize_per_slice(case_pixels, spacing)
