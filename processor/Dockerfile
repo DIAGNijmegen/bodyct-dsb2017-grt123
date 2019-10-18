@@ -2,7 +2,7 @@ FROM oni:11500/uokbaseimage/tensorflow_pytorch_diag_dicomloader_python2:2 AS pro
 
 USER user
 COPY ["processor/Pipfile", "processor/Pipfile.lock", "processor/apply.py", "/home/user/"]
-COPY ["model", "preprocessing", "*.py", "/home/user/DSB2017/"]
+COPY [".", "/home/user/DSB2017/"]
 
 USER root
 RUN chown user:user -R /home/user/DSB2017
