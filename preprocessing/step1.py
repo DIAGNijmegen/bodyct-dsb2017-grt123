@@ -1,16 +1,13 @@
 from __future__ import print_function
 
 import threading
-import numpy as np  # linear algebra
-import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
-import dicom
+import numpy as np
 import os
 import sys
 import scipy.ndimage
-# import matplotlib.pyplot as plt
 import SimpleITK as sitk
 
-from skimage import measure, morphology
+from skimage import measure
 
 try:
     import image_loader as diag_image_loader
@@ -39,6 +36,17 @@ class ParallelCaller(object):
         return self.__result
 
 
+def load_image(data_path, prep_folder, name):
+    case_path = os.path.join(data_path, name)
+    print("  Loading", case_path)
+    if os.path.isdir(case_path):
+        return load_dicom_scan(data_path, prep_folder, name)
+    elif os.path.splitext(case_path)[-1].lower() in ('.mha', '.mhd'):
+        return load_itk_image(case_path, prep_folder)
+    else:
+        raise ValueError("Unknown file type: " + case_path)
+
+
 def load_dicom_scan(data_path, prep_folder, name):
     if diag_image_loader is None:
         return None
@@ -46,61 +54,46 @@ def load_dicom_scan(data_path, prep_folder, name):
     print("case_path={}, data_path={}, name={}".format(case_path, data_path, name))
     image, transform, origin, spacing = diag_image_loader.load_dicom_image(
         [os.path.join(case_path, fn) for fn in os.listdir(case_path)])
+    shape = image.shape
     preprocessing_info_file_name = os.path.join(
         prep_folder,
         '{}_preprocessing_info.txt'.format(name))
-    if os.path.exists(preprocessing_info_file_name):
-        os.remove(preprocessing_info_file_name)
-    with open(preprocessing_info_file_name,
-              'a+') as handle:
-        handle.write(
-            'rotation_matrix_x={},{},{}\n'.format(float(transform[0][0]),
-                                                  float(transform[0][1]),
-                                                  float(transform[0][2])))
-        handle.write(
-            'rotation_matrix_y={},{},{}\n'.format(float(transform[1][0]),
-                                                  float(transform[1][1]),
-                                                  float(transform[1][2])))
-        handle.write(
-            'rotation_matrix_z={},{},{}\n'.format(float(transform[2][0]),
-                                                  float(transform[2][1]),
-                                                  float(transform[2][2])))
-        handle.write(
-            'original_origin={},{},{}\n'.format(float(origin[2]),
-                                                float(origin[1]),
-                                                float(origin[0])))
-        handle.write(
-            'original_spacing={},{},{}\n'.format(float(spacing[2]),
-                                                 float(spacing[1]),
-                                                 float(spacing[0])))
+
+    write_image_info_to_file(preprocessing_info_file_name, transform, origin, spacing, shape)  # inverts all store as x, y, z
+
     return np.array(image, dtype=np.int16), np.array(spacing, dtype=np.float32)
 
 
 def load_itk_image(path, prep_folder):
     sitk_image = sitk.ReadImage(path)
-    spacing = sitk_image.GetSpacing()
-    origin = sitk_image.GetOrigin()
-    transform = sitk_image.GetDirection()
+    spacing = [e for e in reversed(sitk_image.GetSpacing())]
+    origin = [e for e in reversed(sitk_image.GetOrigin())]
+    transform = np.array([e for e in reversed(sitk_image.GetDirection())]).reshape((3, 3))
+    shape = [e for e in reversed(sitk_image.GetSize())]
     pixel_data = sitk.GetArrayFromImage(sitk_image)
     preprocessing_info_file_name = os.path.join(
         prep_folder,
         '{}_preprocessing_info.txt'.format(os.path.basename(os.path.normpath(path))))
-    if os.path.exists(preprocessing_info_file_name):
-        os.remove(preprocessing_info_file_name)
-    with open(preprocessing_info_file_name,
-              'a+') as handle:
+
+    write_image_info_to_file(preprocessing_info_file_name, transform, origin, spacing, shape)
+
+    return np.array(pixel_data, dtype=np.int16), np.array(spacing, dtype=np.float32)
+
+
+def write_image_info_to_file(fname, transform, origin, spacing, shape):
+    with open(fname, 'w') as handle:
         handle.write(
-            'rotation_matrix_x={},{},{}\n'.format(float(transform[0]),
-                                                  float(transform[1]),
-                                                  float(transform[2])))
+            'rotation_matrix_x={},{},{}\n'.format(float(transform[2][2]),
+                                                  float(transform[2][1]),
+                                                  float(transform[2][0])))
         handle.write(
-            'rotation_matrix_y={},{},{}\n'.format(float(transform[3]),
-                                                  float(transform[4]),
-                                                  float(transform[5])))
+            'rotation_matrix_y={},{},{}\n'.format(float(transform[1][2]),
+                                                  float(transform[1][1]),
+                                                  float(transform[1][0])))
         handle.write(
-            'rotation_matrix_z={},{},{}\n'.format(float(transform[6]),
-                                                  float(transform[7]),
-                                                  float(transform[8])))
+            'rotation_matrix_z={},{},{}\n'.format(float(transform[0][2]),
+                                                  float(transform[0][1]),
+                                                  float(transform[0][0])))
         handle.write(
             'original_origin={},{},{}\n'.format(float(origin[2]),
                                                 float(origin[1]),
@@ -109,8 +102,11 @@ def load_itk_image(path, prep_folder):
             'original_spacing={},{},{}\n'.format(float(spacing[2]),
                                                  float(spacing[1]),
                                                  float(spacing[0])))
-    return np.array(pixel_data, dtype=np.int16), np.array(
-        sitk_image.GetSpacing(), dtype=np.float32)
+        handle.write(
+            'original_shape={},{},{}\n'.format(int(shape[2]),
+                                               int(shape[1]),
+                                               int(shape[0])))
+
 
 def binarize_per_slice(image, spacing, intensity_th=-600, sigma=1, area_th=30,
                        eccen_th=0.99, bg_patch_size=10):
@@ -335,17 +331,7 @@ import time
 
 def step1_python(data_path, prep_folder, name):
     st = time.time()
-    case_path = os.path.join(data_path, name)
-    print("  Loading", case_path)
-    if os.path.isdir(case_path):
-        scan_data = load_dicom_scan(data_path, prep_folder, name)
-        if scan_data is None:
-            return None
-        case_pixels, spacing = scan_data
-    elif os.path.splitext(case_path)[-1].lower() in ('.mha', '.mhd'):
-        case_pixels, spacing = load_itk_image(case_path, prep_folder)
-    else:
-        raise ValueError("Unknown file type: " + case_path)
+    case_pixels, spacing = load_image(data_path, prep_folder, name)
 
     print("binarize...", time.time() - st)
     bw = binarize_per_slice(case_pixels, spacing)

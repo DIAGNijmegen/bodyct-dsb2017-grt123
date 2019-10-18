@@ -2,3 +2,6 @@
 *.ipynb*
 training/.flag*
 prediction*.csv
+/.idea
+/bbox_result
+/prep_result

@@ -2,14 +2,9 @@ from __future__ import print_function
 
 import os
 import numpy as np
-from scipy.io import loadmat
-import h5py
 from scipy.ndimage.interpolation import zoom
-from skimage import measure
-import warnings
 from scipy.ndimage.morphology import binary_dilation, generate_binary_structure
 from skimage.morphology import convex_hull_image
-from multiprocessing import Pool
 from functools import partial
 from step1 import step1_python
 import warnings
