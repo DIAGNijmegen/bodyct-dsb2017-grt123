@@ -1,8 +1,13 @@
 FROM oni:11500/uokbaseimage/tensorflow_pytorch_diag_dicomloader_python2:2 AS processor
 
+ARG GIT_COMMIT_ID=unspecified
+
 USER user
 COPY ["processor/Pipfile", "processor/Pipfile.lock", "processor/apply.py", "/home/user/"]
-COPY [".", "/home/user/DSB2017/"]
+COPY ["*.py", "/home/user/DSB2017/"]
+COPY ["model/", "/home/user/DSB2017/model/"]
+COPY ["preprocessing/", "/home/user/DSB2017/preprocessing/"]
+RUN python -c "fn='/home/user/DSB2017/xmlreport.py'; f=open(fn, 'r'); data=f.readlines(); f.close(); data=data[:9] + ['    return \"$GIT_COMMIT_ID\"\n'] + data[14:]; f=open(fn, 'w'); f.writelines(data); f.close();"
 
 USER root
 RUN chown user:user -R /home/user/DSB2017
@@ -24,7 +29,6 @@ LABEL com.radboudumc.diag.processor.hardware.gpu.count=1
 LABEL com.radboudumc.diag.processor.hardware.gpu.cuda_compute_capability=
 LABEL com.radboudumc.diag.processor.hardware.gpu.memory=4G
 
-ARG GIT_COMMIT_ID=unspecified
 LABEL com.radboudumc.diag.processor.git_commit_id=$GIT_COMMIT_ID
 
 
