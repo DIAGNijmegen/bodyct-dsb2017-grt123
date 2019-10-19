@@ -141,25 +141,25 @@ def test_correct_imageinfos_are_created(tmp_path):
 # x y z - ordering (similar to MHD headers)
 @pytest.mark.parametrize("transform_matrix", [
     np.eye(3, 3),
-    #np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+    np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]]),
+    np.array([[-1, 0, 0], [0, 0, 2], [0, -3, 0]]),
+    np.array([[0.3143715, -0.3576820, 0.8793373], [0.6741260, 0.7362967, 0.0584919], [-0.6683747, 0.5743960, 0.4725935]]),
+    np.array([[1, 0.2, 0], [0.3, 1, 0], [0, 0, 1]]),
 ])
 @pytest.mark.parametrize("voxel_crop_origin", [
     np.array([0, 0, 0]),
     np.array([10, 20, 30]),
 ])
 @pytest.mark.parametrize("voxel_crop_shape", [
-    np.array([512, 512, 160]),
-    np.array([256, 256, 80]),
+    np.array([512, 512, 160]),  # image shape x, y, z
     np.array([45, 50, 62]),
 ])
 @pytest.mark.parametrize("offset", [
     np.array([0, 0, 0]),
-    np.array([-379, -210, -228.80000305175781]),
     np.array([-148.11089999999999, -159.04839999999999, 1576])
 ])
 @pytest.mark.parametrize("spacing", [
     np.array([1, 1, 1]),
-    np.array([2.5, 0.8203120231628418, 0.8203120231628418]),
     np.array([0.65299999713897705, 0.65299999713897705, 0.5])
 ])
 def test_voxel_to_world_conversion(tmp_path, transform_matrix, offset, spacing, voxel_crop_origin, voxel_crop_shape):
@@ -185,12 +185,10 @@ def test_voxel_to_world_conversion(tmp_path, transform_matrix, offset, spacing, 
         ' '.join(
         [str(e) for e in spacing.tolist()]
         )))
-    print(header)
     with open(str(tmptestfile), "w") as f:
         f.write(header)
 
     image = sitk.ReadImage(str(tmptestfile))
-    imageshape = np.array(image.GetSize())  # x, y, z
 
     # create image info and inject bounding box information
     load_itk_image(str(tmp_path / "test.mhd"), str(prepdir))
@@ -199,8 +197,6 @@ def test_voxel_to_world_conversion(tmp_path, transform_matrix, offset, spacing, 
             ','.join([str(e) for e in ((voxel_crop_origin * spacing).tolist())]),  # x, y, z
             ','.join([str(e) for e in ((voxel_crop_shape * spacing).tolist())])  # x, y, z
         ))
-    with open(str(prepdir / "test.mhd_preprocessing_info.txt"), "r") as f:
-        print(f.read())
 
     wcoords = []
     vcoords = []
@@ -213,7 +209,7 @@ def test_voxel_to_world_conversion(tmp_path, transform_matrix, offset, spacing, 
         [50, 60, 70],
         [150, 60, 70]
     ]:
-        vcoord = [e for e in reversed(vcoord)]
+        vcoord = [e for e in reversed(vcoord)]  # x, y, z
         wcoord = image.TransformContinuousIndexToPhysicalPoint(vcoord)  # x, y, z
 
         # compute rects x, y, z order...
@@ -226,8 +222,6 @@ def test_voxel_to_world_conversion(tmp_path, transform_matrix, offset, spacing, 
 
     jsonfile = tmp_path / "test.json"
     rects = {"test.mhd": rectlist}
-    print("")
     ConvertVoxelToWorld(str(prepdir), cropped_rects=rects, output_file=str(jsonfile))
     for i, res in enumerate(read_json_coordinates(str(jsonfile))["test.mhd"]):
-        print("{:40} {:40} {:40}".format(str(vcoords[i]), str(wcoords[i]), str(res["world_voxel_mean"])))
         assert np.allclose(wcoords[i], res["world_voxel_mean"])
