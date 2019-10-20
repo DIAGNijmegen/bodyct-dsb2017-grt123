@@ -31,6 +31,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
          crop_rects_outputfile=None, output_convert_debug_file=None,
          use_existing_preprocessing=True, skip_preprocessing=False, skip_detect=False,
          classifier_max_nodules_to_include=None, classifier_num_nodules_for_cancer_decision=5,
+         classifier_batch_size=20,
          data_filter=None):
     execution_starttime = datetime.now()
     use_gpu = n_gpu > 0
@@ -123,12 +124,21 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
             for i, (x, coord) in enumerate(data_loader):
                 # if nodules for case i are > 0
                 if x is not None:
+                    out_combined = None
                     if use_gpu:
                         coord = coord.cuda()
                         x = x.cuda()
 
-                    nodulePred, casePred, out = model(x, coord)
-                    nodule_cancer_probabilities[i] = out.data[0, :].cpu().numpy()
+                    for j in range(0, x.size()[0], classifier_batch_size):
+                        _, _, out = model(x[j:j+classifier_batch_size, :], coord[j:j+classifier_batch_size, :])
+                        out_combined = torch.cat((out_combined, out.detach()), dim=1) if out_combined is not None else out.detach()
+
+                    # compute image level cancer score
+                    base_prob = torch.sigmoid(model.module.baseline)
+                    casePred = 1 - torch.prod(1 - out_combined[:, :model.module.topk], dim=1) * (
+                            1 - base_prob.expand(out_combined.size()[0]))
+
+                    nodule_cancer_probabilities[i] = out_combined.data[0, :].cpu().numpy()
                     predlist.append(casePred.data.cpu().numpy())
                 else:
                     nodule_cancer_probabilities[i] = []
