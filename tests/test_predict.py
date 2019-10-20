@@ -158,8 +158,10 @@ def test_correct_top5(tmp_path,):
     [
         (0, 20),
         (3, 20),
+        (3, 2),
+        (43, 20),
         pytest.param(
-            (43, 50),
+            43, 50,
             marks=[
                 pytest.mark.xfail(reason="cuda out of memory"),
                 pytest.mark.skipif(
@@ -172,8 +174,7 @@ def test_correct_top5(tmp_path,):
                     reason="cuda not available or GPU has more than 6 GB of VRAM required for test",
                 ),
             ],
-        ),
-        (43, 10),
+        )
     ],
 )
 def test_num_nodules(tmp_path, nodules, classifier_batch_size):

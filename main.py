@@ -89,6 +89,9 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         test_detect(test_loader, nod_net, get_pbb, output_bbox_dir, config1,
                     n_gpu=n_gpu)
 
+    # Free up nodule detection module resources
+    del nod_net.module
+
     print "Applying case model..."
 
     casemodel = import_module(classifier_model.split('.py')[0])
@@ -128,9 +131,9 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
                     if use_gpu:
                         coord = coord.cuda()
                         x = x.cuda()
-
-                    for j in range(0, x.size()[0], classifier_batch_size):
-                        _, _, out = model(x[j:j+classifier_batch_size, :], coord[j:j+classifier_batch_size, :])
+                    num_nodules = x.size()[1]
+                    for j in range(0, num_nodules, classifier_batch_size):
+                        _, _, out = model(x[:, j:j+classifier_batch_size, :], coord[:, j:j+classifier_batch_size, :])
                         out_combined = torch.cat((out_combined, out.detach()), dim=1) if out_combined is not None else out.detach()
 
                     # compute image level cancer score
