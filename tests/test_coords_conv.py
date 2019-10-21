@@ -49,6 +49,25 @@ def read_json_coordinates(fname):
     return r
 
 
+def test_match_metadata_order_xyz_with_mhd_header(tmp_path):
+    res_dir = Path(__file__).parent / "resources"
+    prep_dir = tmp_path / "prep"
+    os.makedirs(str(prep_dir))
+    mhd_file = res_dir / "inputs" / "lidc.mhd"
+    load_itk_image(str(mhd_file), str(prep_dir))
+    info_file = prep_dir / (mhd_file.name + "_preprocessing_info.txt")
+    assert info_file.exists()
+    with open(str(info_file), "r") as f:
+        lines = [line.strip().split("=") for line in f.readlines()]
+    d = {key: np.array([float(e) for e in values.split(",")]) for key, values in lines}
+    rotmatrix = np.array([[ee for ee in d["rotation_matrix_{}".format(e)]] for e in ["x", "y", "z"]]).flatten()
+    image = sitk.ReadImage(str(mhd_file))
+    assert np.allclose(image.GetSpacing(), d["original_spacing"])
+    assert np.allclose(image.GetOrigin(), d["original_origin"])
+    assert np.allclose(image.GetSize(), d["original_shape"])
+    assert np.allclose(image.GetDirection(), rotmatrix)
+
+
 def test_coord_relative_to_world():
     write_screenshots = False
     ensure_testdata_unpacked()
@@ -121,19 +140,29 @@ def test_correct_imageinfos_are_created(tmp_path):
 
 # x y z - ordering (similar to MHD headers)
 @pytest.mark.parametrize("transform_matrix", [
-    np.eye(3, 3)
+    np.eye(3, 3),
+    np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]]),
+    np.array([[-1, 0, 0], [0, 0, 2], [0, -3, 0]]),
+    np.array([[0.3143715, -0.3576820, 0.8793373], [0.6741260, 0.7362967, 0.0584919], [-0.6683747, 0.5743960, 0.4725935]]),
+    np.array([[1, 0.2, 0], [0.3, 1, 0], [0, 0, 1]]),
+])
+@pytest.mark.parametrize("voxel_crop_origin", [
+    np.array([0, 0, 0]),
+    np.array([10, 20, 30]),
+])
+@pytest.mark.parametrize("voxel_crop_shape", [
+    np.array([512, 512, 160]),  # image shape x, y, z
+    np.array([45, 50, 62]),
 ])
 @pytest.mark.parametrize("offset", [
     np.array([0, 0, 0]),
-    np.array([-379, -210, -228.80000305175781]),
     np.array([-148.11089999999999, -159.04839999999999, 1576])
 ])
 @pytest.mark.parametrize("spacing", [
     np.array([1, 1, 1]),
-    np.array([2.5, 0.8203120231628418, 0.8203120231628418]),
     np.array([0.65299999713897705, 0.65299999713897705, 0.5])
 ])
-def test_voxel_to_world_conversion(tmp_path, transform_matrix, offset, spacing):
+def test_voxel_to_world_conversion(tmp_path, transform_matrix, offset, spacing, voxel_crop_origin, voxel_crop_shape):
     resdir = Path(__file__).parent / "resources"
     testfile = resdir / "test.mhd"
     testdatafile = resdir / "test.zraw"
@@ -156,24 +185,18 @@ def test_voxel_to_world_conversion(tmp_path, transform_matrix, offset, spacing):
         ' '.join(
         [str(e) for e in spacing.tolist()]
         )))
-    print(header)
     with open(str(tmptestfile), "w") as f:
         f.write(header)
 
     image = sitk.ReadImage(str(tmptestfile))
-    imageshape = np.array(image.GetSize())  # x, y, z
 
-    # create image info and inject bounding box information (whole image)
-    voxel_crop_origin = np.array([0, 0, 0])
-    voxel_crop_shape = np.array(imageshape)
+    # create image info and inject bounding box information
     load_itk_image(str(tmp_path / "test.mhd"), str(prepdir))
     with open(str(prepdir / "test.mhd_preprocessing_info.txt"), "a+") as f:
         f.write("extendbox_origin={}\ncropped_grid_shape={}\n".format(
             ','.join([str(e) for e in ((voxel_crop_origin * spacing).tolist())]),  # x, y, z
             ','.join([str(e) for e in ((voxel_crop_shape * spacing).tolist())])  # x, y, z
         ))
-    with open(str(prepdir / "test.mhd_preprocessing_info.txt"), "r") as f:
-        print(f.read())
 
     wcoords = []
     vcoords = []
@@ -186,20 +209,19 @@ def test_voxel_to_world_conversion(tmp_path, transform_matrix, offset, spacing):
         [50, 60, 70],
         [150, 60, 70]
     ]:
-        vcoord = [e for e in reversed(vcoord)]
+        vcoord = [e for e in reversed(vcoord)]  # x, y, z
         wcoord = image.TransformContinuousIndexToPhysicalPoint(vcoord)  # x, y, z
 
         # compute rects x, y, z order...
         rectlist.append({
-           key: ((vcoord[i]-10) / float(imageshape[i]), (vcoord[i]+10) / float(imageshape[i])) for i, key in enumerate(['x', 'y', 'z'])
+           key: ((vcoord[i]-10-voxel_crop_origin[i]) / float(voxel_crop_shape[i]),
+                 (vcoord[i]+10-voxel_crop_origin[i]) / float(voxel_crop_shape[i])) for i, key in enumerate(['x', 'y', 'z'])
         })
         wcoords.append(wcoord)
         vcoords.append(vcoord)
 
     jsonfile = tmp_path / "test.json"
     rects = {"test.mhd": rectlist}
-    print("")
     ConvertVoxelToWorld(str(prepdir), cropped_rects=rects, output_file=str(jsonfile))
     for i, res in enumerate(read_json_coordinates(str(jsonfile))["test.mhd"]):
-        print("{:40} {:40} {:40}".format(str(vcoords[i]), str(wcoords[i]), str(res["world_voxel_mean"])))
         assert np.allclose(wcoords[i], res["world_voxel_mean"])

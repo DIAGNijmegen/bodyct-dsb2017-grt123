@@ -93,8 +93,8 @@ class ConvertVoxelToWorld(object):
 
         for scan_idx, coords in self._coordinates.items():
             for coord in coords:
-                coord['world_x'] = [c * self._conversion_parameters[scan_idx][
-                    'rotation_matrix_x']['x'] + \
+                world_x = [c * self._conversion_parameters[scan_idx][
+                                        'rotation_matrix_x']['x'] + \
                                     coord['world_y'][index] *
                                     self._conversion_parameters[scan_idx][
                                         'rotation_matrix_x']['y'] + \
@@ -102,7 +102,7 @@ class ConvertVoxelToWorld(object):
                                     self._conversion_parameters[scan_idx][
                                         'rotation_matrix_x']['z'] for index, c
                                     in enumerate(coord['world_x'])]
-                coord['world_y'] = [coord['world_x'][index] *
+                world_y = [coord['world_x'][index] *
                                     self._conversion_parameters[scan_idx][
                                         'rotation_matrix_y']['x'] + \
                                     c * self._conversion_parameters[scan_idx][
@@ -111,7 +111,7 @@ class ConvertVoxelToWorld(object):
                                     self._conversion_parameters[scan_idx][
                                         'rotation_matrix_y']['z'] for index, c
                                     in enumerate(coord['world_y'])]
-                coord['world_z'] = [coord['world_x'][index] *
+                world_z = [coord['world_x'][index] *
                                     self._conversion_parameters[scan_idx][
                                         'rotation_matrix_z']['x'] + \
                                     coord['world_y'][index] *
@@ -120,6 +120,12 @@ class ConvertVoxelToWorld(object):
                                     c * self._conversion_parameters[scan_idx][
                                         'rotation_matrix_z']['z'] for index, c
                                     in enumerate(coord['world_z'])]
+                # split the dictionary assignment and computation in a separate code block to avoid
+                # overwriting the initial required values with intermediate values in the
+                # computation -Sil
+                coord['world_x'] = world_x
+                coord['world_y'] = world_y
+                coord['world_z'] = world_z
                 for dim in dimensions:
                     coord[world.format(dim)] = [
                         c +
