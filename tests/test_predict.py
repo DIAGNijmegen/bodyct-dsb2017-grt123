@@ -154,12 +154,14 @@ def test_correct_top5(tmp_path,):
 
 
 @pytest.mark.parametrize(
-    "nodules",
+    ["nodules", "classifier_batch_size"],
     [
-        0,
-        3,
+        (0, 20),
+        (3, 20),
+        (3, 2),
+        (43, 20),
         pytest.param(
-            43,
+            43, 50,
             marks=[
                 pytest.mark.xfail(reason="cuda out of memory"),
                 pytest.mark.skipif(
@@ -172,16 +174,17 @@ def test_correct_top5(tmp_path,):
                     reason="cuda not available or GPU has more than 6 GB of VRAM required for test",
                 ),
             ],
-        ),
+        )
     ],
 )
-def test_num_nodules(tmp_path, nodules):
+def test_num_nodules(tmp_path, nodules, classifier_batch_size):
     test_data_dir = ensure_testdata_unpacked(dataset="inputs2")
     cfg = get_config(tmp_path, test_data_dir)
     results = main.main(
         skip_detect=False,
         skip_preprocessing=False,
         data_filter=r"nodules_{}.mhd".format(nodules),
+        classifier_batch_size=classifier_batch_size,
         **cfg
     )
     assert len(results) == 1

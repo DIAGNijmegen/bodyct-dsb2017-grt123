@@ -14,6 +14,7 @@ config = {
     'classifier_param': './model/classifier.ckpt',
     'classifier_max_nodules_to_include': None,
     'classifier_num_nodules_for_cancer_decision': 5,
+    'classifier_batch_size': 20,
     'n_gpu': int(os.environ.get("N_GPUS", "1")),
     'n_worker_preprocessing': int(os.environ.get("N_PREPROCESSING_TASKS", "6")),
     'use_existing_preprocessing': True,
