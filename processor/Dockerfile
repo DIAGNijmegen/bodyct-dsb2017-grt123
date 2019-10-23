@@ -10,7 +10,8 @@ COPY ["preprocessing/", "/home/user/DSB2017/preprocessing/"]
 
 # first ensure that xmlreport.py matches the md5 hash version,
 # subsequently replace the GIT_COMMIT_ID lookup function with the embeded GIT_COMMIT_ID string
-RUN echo "b8feaeb6a78420239f0d9a034eed821c  /home/user/DSB2017/xmlreport.py" | md5sum -c -
+# expects line endings to be LF
+RUN echo "ecaf1db67f153ec12f7068cc84eb1da6  /home/user/DSB2017/xmlreport.py" | md5sum -c -
 RUN python -c "fn='/home/user/DSB2017/xmlreport.py'; f=open(fn, 'r'); data=f.readlines(); f.close(); data=data[:9] + ['    return \"$GIT_COMMIT_ID\"\n'] + data[14:]; f=open(fn, 'w'); f.writelines(data); f.close();"
 
 USER root
