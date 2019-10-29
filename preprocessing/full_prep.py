@@ -126,6 +126,8 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
 
         newshape = np.round(np.array(Mask.shape) * spacing / resolution)
         xx, yy, zz = np.where(Mask)
+        if len(xx) == 0:
+            raise ValueError("Pre-processing failed: empty mask found! Please check your input image.")
         box = np.array([[np.min(xx), np.max(xx)], [np.min(yy), np.max(yy)],
                         [np.min(zz), np.max(zz)]])
         box = box * np.expand_dims(spacing, 1) / np.expand_dims(resolution, 1)
