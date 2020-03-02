@@ -1,7 +1,5 @@
 FROM doduo1.umcn.nl/uokbaseimage/tensorflow_pytorch_diag_dicomloader_python2:2 AS processor
 
-ARG GIT_COMMIT_ID=unspecified
-
 USER user
 COPY ["processor/Pipfile", "processor/Pipfile.lock", "processor/apply.py", "/home/user/"]
 COPY ["*.py", "/home/user/DSB2017/"]
@@ -24,18 +22,18 @@ RUN LC_ALL=C.UTF-8 pipenv --python 2.7 install --system && rm -rf /root/.cache
 USER user
 ENTRYPOINT ["/usr/bin/python2", "apply.py", "--n-gpus=1", "--n-cpus=8"]
 
-LABEL com.radboudumc.diag.processor.name=grt123
-LABEL com.radboudumc.diag.processor.ticket=8765
+LABEL nl.diagnijmegen.rse.algorithm.name=grt123
+LABEL nl.diagnijmegen.rse.algorithm.ticket=8765
 
-LABEL com.radboudumc.diag.processor.hardware.cpu.count=8
-LABEL com.radboudumc.diag.processor.hardware.cpu.capabilities=
-LABEL com.radboudumc.diag.processor.hardware.memory=30G
-LABEL com.radboudumc.diag.processor.hardware.gpu.count=1
-LABEL com.radboudumc.diag.processor.hardware.gpu.cuda_compute_capability=
-LABEL com.radboudumc.diag.processor.hardware.gpu.memory=4G
+LABEL nl.diagnijmegen.rse.algorithm.hardware.cpu.count=8
+LABEL nl.diagnijmegen.rse.algorithm.hardware.cpu.capabilities=""
+LABEL nl.diagnijmegen.rse.algorithm.hardware.memory=30G
+LABEL nl.diagnijmegen.rse.algorithm.hardware.gpu.count=1
+LABEL nl.diagnijmegen.rse.algorithm.hardware.gpu.cuda_compute_capability=""
+LABEL nl.diagnijmegen.rse.algorithm.hardware.gpu.memory=4G
 
-LABEL com.radboudumc.diag.processor.git_commit_id=$GIT_COMMIT_ID
-
+ARG GIT_COMMIT_ID=unspecified
+LABEL nl.diagnijmegen.rse.algorithm.git_commit_id=$GIT_COMMIT_ID
 
 FROM processor AS test
 
