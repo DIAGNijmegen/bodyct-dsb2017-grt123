@@ -1,4 +1,4 @@
-FROM oni:11500/uokbaseimage/tensorflow_pytorch_diag_dicomloader_python2:2 AS processor
+FROM doduo1.umcn.nl/uokbaseimage/tensorflow_pytorch_diag_dicomloader_python2:2 AS processor
 
 ARG GIT_COMMIT_ID=unspecified
 
