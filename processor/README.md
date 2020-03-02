@@ -12,7 +12,7 @@ This repository uses a modifed grt123 solution to implement a DIAG-processor doc
 
 ## Building
 
-The processor uses docker to build a containerized runtime environment for the grt123 algorithm to run in. To build the runtime environment, DIAG's `oni:11500` docker registry must be avaialbe, since it uses the uok-base images stored there.
+The processor uses docker to build a containerized runtime environment for the grt123 algorithm to run in. To build the runtime environment, DIAG's `doduo1.umcn.nl` docker registry must be avaialbe, since it uses the uok-base images stored there.
 
 If you are in the DIAG-network, issue the command
 
