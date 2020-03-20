@@ -3,7 +3,7 @@ config = {'stage1_data_path':'/mnt/diskA/paul/dsb2017/stage1/',
           'luna_segment':'/mnt/diskA/paul/dsb2017/luna16-segs/',
           
           'luna_data':'/mnt/diskA/paul/dsb2017/grt123/luna_data/',
-          'preprocess_result_path':'/mnt/diskA/paul/dsb2017/grt123/stage1_preprocess/',       
+          'preprocess_result_path':'/mnt/netcache/bodyct/experiments/nodule_object_detectors_t8798/data/training_data_pp/',       
           
           'luna_abbr':'./detector/labels/shorter.csv',
           'luna_label':'./detector/labels/lunaqualified.csv',
