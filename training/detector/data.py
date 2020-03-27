@@ -47,6 +47,7 @@ class DataBowl3Detector(Dataset):
             for i, l in enumerate(labels):
                 if len(l) > 0 :
                     for t in l:
+                        # only if the box has a size bigger than the sizelim it is added
                         if t[3]>sizelim:
                             self.bboxes.append([np.concatenate([[i],t])])
                         if t[3]>sizelim2:
@@ -91,6 +92,7 @@ class DataBowl3Detector(Dataset):
                 bboxes = self.sample_bboxes[randimid]
                 isScale = self.augtype['scale'] and (self.phase=='train')
                 sample, target, bboxes, coord = self.crop(imgs, [], bboxes,isScale=False,isRand=True)
+            assert(sample.shape[1:] == (128, 128, 128)), filename
             label = self.label_mapping(sample.shape[1:], target, bboxes)
             sample = (sample.astype(np.float32)-128)/128
             #if filename in self.kagglenames and self.phase=='train':
@@ -111,16 +113,17 @@ class DataBowl3Detector(Dataset):
             coord = np.concatenate([xx[np.newaxis,...], yy[np.newaxis,...],zz[np.newaxis,:]],0).astype('float32')
             imgs, nzhw = self.split_comber.split(imgs)
             coord2, nzhw2 = self.split_comber.split(coord,
-                                                   side_len = self.split_comber.side_len/self.stride,
-                                                   max_stride = self.split_comber.max_stride/self.stride,
-                                                   margin = self.split_comber.margin/self.stride)
+                                                   side_len = int(self.split_comber.side_len/self.stride),
+                                                   max_stride = int(self.split_comber.max_stride/self.stride),
+                                                   margin = int(self.split_comber.margin/self.stride))
+
             assert np.all(nzhw==nzhw2)
             imgs = (imgs.astype(np.float32)-128)/128
             return torch.from_numpy(imgs), bboxes, torch.from_numpy(coord2), np.array(nzhw)
 
     def __len__(self):
         if self.phase == 'train':
-            return len(self.bboxes)/(1-self.r_rand)
+            return int(len(self.bboxes)/(1-self.r_rand))
         elif self.phase =='val':
             return len(self.bboxes)
         else:
@@ -267,8 +270,8 @@ class LabelMapping(object):
         
         output_size = []
         for i in range(3):
-            assert(input_size[i] % stride == 0)
-            output_size.append(input_size[i] / stride)
+            assert(input_size[i] % stride == 0), (input_size[1], stride)
+            output_size.append(int(input_size[i] / stride))
         
         label = -1 * np.ones(output_size + [len(anchors), 5], np.float32)
         offset = ((stride.astype('float')) - 1) / 2

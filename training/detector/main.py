@@ -15,7 +15,6 @@ from torch.nn import DataParallel
 from torch.backends import cudnn
 from torch.utils.data import DataLoader
 from torch import optim
-from torch.autograd import Variable
 from config_training import config as config_training
 
 from layers import acc
@@ -56,7 +55,6 @@ def main():
     global args
     args = parser.parse_args()
     
-    
     torch.manual_seed(0)
     torch.cuda.set_device(0)
 
@@ -91,8 +89,10 @@ def main():
         pyfiles = [f for f in os.listdir('./') if f.endswith('.py')]
         for f in pyfiles:
             shutil.copy(f,os.path.join(save_dir,f))
-    n_gpu = setgpu(args.gpu)
-    args.n_gpu = n_gpu
+
+    #n_gpu = setgpu(args.gpu)
+    #args.n_gpu = n_gpu
+    
     net = net.cuda()
     loss = loss.cuda()
     cudnn.benchmark = True
@@ -106,7 +106,7 @@ def main():
         split_comber = SplitComb(sidelen,config['max_stride'],config['stride'],margin,config['pad_value'])
         dataset = data.DataBowl3Detector(
             datadir,
-            'full.npy',
+            'test_full.npy',                                              
             config,
             phase='test',
             split_comber=split_comber)
@@ -118,14 +118,15 @@ def main():
             collate_fn = data.collate,
             pin_memory=False)
         
-        test(test_loader, net, get_pbb, save_dir,config)
+        with torch.no_grad():
+            test(test_loader, net, get_pbb, save_dir,config)
         return
 
     #net = DataParallel(net)
     
     dataset = data.DataBowl3Detector(
         datadir,
-        'train.npy',
+        'train_full.npy',
         config,
         phase = 'train')
     train_loader = DataLoader(
@@ -137,7 +138,7 @@ def main():
 
     dataset = data.DataBowl3Detector(
         datadir,
-        'val.npy',
+        'val_full.npy',
         config,
         phase = 'val')
     val_loader = DataLoader(
@@ -165,7 +166,8 @@ def main():
 
     for epoch in range(start_epoch, args.epochs + 1):
         train(train_loader, net, loss, epoch, optimizer, get_lr, args.save_freq, save_dir)
-        validate(val_loader, net, loss)
+        with torch.no_grad():
+            validate(val_loader, net, loss)
 
 def train(data_loader, net, loss, epoch, optimizer, get_lr, save_freq, save_dir):
     start_time = time.time()
@@ -187,7 +189,7 @@ def train(data_loader, net, loss, epoch, optimizer, get_lr, save_freq, save_dir)
         loss_output[0].backward()
         optimizer.step()
 
-        loss_output[0] = loss_output[0].data[0]
+        loss_output[0] = loss_output[0].item()
         metrics.append(loss_output)
 
     if epoch % args.save_freq == 0:            
@@ -219,44 +221,40 @@ def train(data_loader, net, loss, epoch, optimizer, get_lr, save_freq, save_dir)
         np.mean(metrics[:, 3]),
         np.mean(metrics[:, 4]),
         np.mean(metrics[:, 5])))
-    #print
+
 
 def validate(data_loader, net, loss):
-    start_time = time.time()
-    
+    start_time = time.time()    
     net.eval()
 
-    with torch.no_grad():
-        metrics = []
-        for i, (data, target, coord) in enumerate(data_loader):
-            data = data.cuda()
-            target = target.cuda()
-            coord = coord.cuda()
+    metrics = []
+    for i, (data, target, coord) in enumerate(data_loader):
+        data = data.cuda()
+        target = target.cuda()
+        coord = coord.cuda()
 
-            output = net(data, coord)
-            loss_output = loss(output, target, train = False)
+        output = net(data, coord)
+        loss_output = loss(output, target, train = False)
 
-            loss_output[0] = loss_output[0].data[0]
-            metrics.append(loss_output)    
-        end_time = time.time()
+        loss_output[0] = loss_output[0].item()
+        metrics.append(loss_output)    
+    end_time = time.time()
 
-        metrics = np.asarray(metrics, np.float32)
-        print('Validation: tpr %3.2f, tnr %3.8f, total pos %d, total neg %d, time %3.2f' % (
-            100.0 * np.sum(metrics[:, 6]) / np.sum(metrics[:, 7]),
-            100.0 * np.sum(metrics[:, 8]) / np.sum(metrics[:, 9]),
-            np.sum(metrics[:, 7]),
-            np.sum(metrics[:, 9]),
-            end_time - start_time))
-        print('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
-            np.mean(metrics[:, 0]),
-            np.mean(metrics[:, 1]),
-            np.mean(metrics[:, 2]),
-            np.mean(metrics[:, 3]),
-            np.mean(metrics[:, 4]),
-            np.mean(metrics[:, 5])))
+    metrics = np.asarray(metrics, np.float32)
+    print('Validation: tpr %3.2f, tnr %3.8f, total pos %d, total neg %d, time %3.2f' % (
+        100.0 * np.sum(metrics[:, 6]) / np.sum(metrics[:, 7]),
+        100.0 * np.sum(metrics[:, 8]) / np.sum(metrics[:, 9]),
+        np.sum(metrics[:, 7]),
+        np.sum(metrics[:, 9]),
+        end_time - start_time))
+    print('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
+        np.mean(metrics[:, 0]),
+        np.mean(metrics[:, 1]),
+        np.mean(metrics[:, 2]),
+        np.mean(metrics[:, 3]),
+        np.mean(metrics[:, 4]),
+        np.mean(metrics[:, 5])))
 
-    #print
-    #print
 
 def test(data_loader, net, get_pbb, save_dir, config):
     start_time = time.time()
@@ -281,15 +279,15 @@ def test(data_loader, net, get_pbb, save_dir, config):
                 isfeat = True
         n_per_run = args.n_test
         print(data.size())
-        splitlist = range(0,len(data)+1,n_per_run)
+        splitlist = list(range(0,len(data)+1,n_per_run))            # cast to list in Python 3
         if splitlist[-1]!=len(data):
             splitlist.append(len(data))
         outputlist = []
         featurelist = []
 
         for i in range(len(splitlist)-1):
-            input = Variable(data[splitlist[i]:splitlist[i+1]], volatile = True).cuda()
-            inputcoord = Variable(coord[splitlist[i]:splitlist[i+1]], volatile = True).cuda()
+            input = data[splitlist[i]:splitlist[i+1]].cuda()
+            inputcoord = coord[splitlist[i]:splitlist[i+1]].cuda()
             if isfeat:
                 output,feature = net(input,inputcoord)
                 featurelist.append(feature.data.cpu().numpy())
@@ -316,37 +314,34 @@ def test(data_loader, net, get_pbb, save_dir, config):
     np.save(os.path.join(save_dir, 'namelist.npy'), namelist)
     end_time = time.time()
 
-
     print('elapsed time is %3.2f seconds' % (end_time - start_time))
-    #print
-    #print
+
 
 def singletest(data,net,config,splitfun,combinefun,n_per_run,margin = 64,isfeat=False):
-    with torch.no_grad():
-        z, h, w = data.size(2), data.size(3), data.size(4)
-        print(data.size())
-        data = splitfun(data,config['max_stride'],margin)
-        data = data.cuda()
-        splitlist = range(0,args.split+1,n_per_run)
-        outputlist = []
-        featurelist = []
-        for i in range(len(splitlist)-1):
-            if isfeat:
-                output,feature = net(data[splitlist[i]:splitlist[i+1]])
-                featurelist.append(feature)
-            else:
-                output = net(data[splitlist[i]:splitlist[i+1]])
-            output = output.data.cpu().numpy()
-            outputlist.append(output)
-            
-        output = np.concatenate(outputlist,0)
-        output = combinefun(output, z / config['stride'], h / config['stride'], w / config['stride'])
+    z, h, w = data.size(2), data.size(3), data.size(4)
+    print(data.size())
+    data = splitfun(data,config['max_stride'],margin)
+    data = data.cuda()
+    splitlist = range(0,args.split+1,n_per_run)
+    outputlist = []
+    featurelist = []
+    for i in range(len(splitlist)-1):
         if isfeat:
-            feature = np.concatenate(featurelist,0).transpose([0,2,3,4,1])
-            feature = combinefun(feature, z / config['stride'], h / config['stride'], w / config['stride'])
-            return output,feature
+            output,feature = net(data[splitlist[i]:splitlist[i+1]])
+            featurelist.append(feature)
         else:
-            return output
+            output = net(data[splitlist[i]:splitlist[i+1]])
+        output = output.data.cpu().numpy()
+        outputlist.append(output)
+        
+    output = np.concatenate(outputlist,0)
+    output = combinefun(output, z / config['stride'], h / config['stride'], w / config['stride'])
+    if isfeat:
+        feature = np.concatenate(featurelist,0).transpose([0,2,3,4,1])
+        feature = combinefun(feature, z / config['stride'], h / config['stride'], w / config['stride'])
+        return output,feature
+    else:
+        return output
 
 
 if __name__ == '__main__':
