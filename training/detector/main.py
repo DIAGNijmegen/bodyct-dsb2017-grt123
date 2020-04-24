@@ -30,7 +30,7 @@ parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=16, type=int,
                     metavar='N', help='mini-batch size (default: 16)')
-parser.add_argument('--lr', '--learning-rate', default=0.01, type=float,
+parser.add_argument('--lr', '--learning-rate', default=10 ** -4, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
@@ -53,11 +53,9 @@ parser.add_argument('--n_test', default=8, type=int, metavar='N',
 
 def main():
     global args
-    args = parser.parse_args()
-    
+    args = parser.parse_args()    
     torch.manual_seed(0)
     torch.cuda.set_device(0)
-
     model = import_module(args.model)
     config, net, loss, get_pbb = model.get_model()
     start_epoch = args.start_epoch
@@ -90,13 +88,10 @@ def main():
         for f in pyfiles:
             shutil.copy(f,os.path.join(save_dir,f))
 
-    #n_gpu = setgpu(args.gpu)
-    #args.n_gpu = n_gpu
-    
     net = net.cuda()
     loss = loss.cuda()
     cudnn.benchmark = True
-    net = DataParallel(net)
+    net = DataParallel(net, [0, 1, 2, 3])
     datadir = config_training['preprocess_result_path']
     
     if args.test == 1:
@@ -114,15 +109,13 @@ def main():
             dataset,
             batch_size = 1,
             shuffle = False,
-            num_workers = args.workers,
+            num_workers = 0,
             collate_fn = data.collate,
             pin_memory=False)
         
         with torch.no_grad():
             test(test_loader, net, get_pbb, save_dir,config)
         return
-
-    #net = DataParallel(net)
     
     dataset = data.DataBowl3Detector(
         datadir,
@@ -148,37 +141,22 @@ def main():
         num_workers = args.workers,
         pin_memory=True)
 
-    optimizer = torch.optim.SGD(
+    optimizer = torch.optim.Adam(
         net.parameters(),
-        args.lr,
-        momentum = 0.9,
-        weight_decay = args.weight_decay)
-    
-    def get_lr(epoch):
-        if epoch <= args.epochs * 0.5:
-            lr = args.lr
-        elif epoch <= args.epochs * 0.8:
-            lr = 0.1 * args.lr
-        else:
-            lr = 0.01 * args.lr
-        return lr
-    
+        args.lr)
 
     for epoch in range(start_epoch, args.epochs + 1):
-        train(train_loader, net, loss, epoch, optimizer, get_lr, args.save_freq, save_dir)
+        train(train_loader, net, loss, epoch, optimizer, args.lr, args.save_freq, save_dir)
         with torch.no_grad():
             validate(val_loader, net, loss)
 
-def train(data_loader, net, loss, epoch, optimizer, get_lr, save_freq, save_dir):
+def train(data_loader, net, loss, epoch, optimizer, lr, save_freq, save_dir):
     start_time = time.time()
-    
     net.train()
-    lr = get_lr(epoch)
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
 
     metrics = []
     for i, (data, target, coord) in enumerate(data_loader):
+        start_time_step = time.time()
         data = data.cuda()
         target = target.cuda()
         coord = coord.cuda()
@@ -191,6 +169,8 @@ def train(data_loader, net, loss, epoch, optimizer, get_lr, save_freq, save_dir)
 
         loss_output[0] = loss_output[0].item()
         metrics.append(loss_output)
+        step_time =  time.time() - start_time_step
+        print('Step: {:d}, loss: {:.2f}, time: {:.2f}.'.format(i, loss_output[0], step_time))
 
     if epoch % args.save_freq == 0:            
         state_dict = net.module.state_dict()

@@ -60,7 +60,7 @@ class SplitComb():
             stride = self.stride
         if margin == None:
             margin = self.margin
-        if nzhw==None:
+        if nzhw is None:
             nz = self.nz
             nh = self.nh
             nw = self.nw
@@ -68,8 +68,8 @@ class SplitComb():
             nz,nh,nw = nzhw
         assert(side_len % stride == 0)
         assert(margin % stride == 0)
-        side_len /= stride
-        margin /= stride
+        side_len = int(side_len / stride)
+        margin = int(margin / stride)
 
         splits = []
         for i in range(len(output)):

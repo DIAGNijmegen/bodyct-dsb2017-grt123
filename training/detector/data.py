@@ -92,7 +92,7 @@ class DataBowl3Detector(Dataset):
                 bboxes = self.sample_bboxes[randimid]
                 isScale = self.augtype['scale'] and (self.phase=='train')
                 sample, target, bboxes, coord = self.crop(imgs, [], bboxes,isScale=False,isRand=True)
-            assert(sample.shape[1:] == (128, 128, 128)), filename
+            assert(sample.shape[1:] == (128, 128, 128)), filename                                                # added this assert to find which files to blacklist
             label = self.label_mapping(sample.shape[1:], target, bboxes)
             sample = (sample.astype(np.float32)-128)/128
             #if filename in self.kagglenames and self.phase=='train':
@@ -270,7 +270,7 @@ class LabelMapping(object):
         
         output_size = []
         for i in range(3):
-            assert(input_size[i] % stride == 0), (input_size[1], stride)
+            assert(input_size[i] % stride == 0)
             output_size.append(int(input_size[i] / stride))
         
         label = -1 * np.ones(output_size + [len(anchors), 5], np.float32)
