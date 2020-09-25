@@ -6,6 +6,10 @@ COPY ["*.py", "/home/user/DSB2017/"]
 COPY ["model/", "/home/user/DSB2017/model/"]
 COPY ["preprocessing/", "/home/user/DSB2017/preprocessing/"]
 
+ARG GIT_COMMIT_ID=unspecified
+# Set the ENV GIT_COMMIT_ID so that python can use this to insert in the xmlreport.py
+ENV GIT_COMMIT_ID=$GIT_COMMIT_ID
+
 # first ensure that xmlreport.py matches the md5 hash version,
 # subsequently replace the GIT_COMMIT_ID lookup function with the embeded GIT_COMMIT_ID string
 # expects line endings to be LF
@@ -32,7 +36,7 @@ LABEL nl.diagnijmegen.rse.algorithm.hardware.gpu.count=1
 LABEL nl.diagnijmegen.rse.algorithm.hardware.gpu.cuda_compute_capability=""
 LABEL nl.diagnijmegen.rse.algorithm.hardware.gpu.memory=4G
 
-ARG GIT_COMMIT_ID=unspecified
+
 LABEL nl.diagnijmegen.rse.algorithm.git_commit_id=$GIT_COMMIT_ID
 
 FROM processor AS test
