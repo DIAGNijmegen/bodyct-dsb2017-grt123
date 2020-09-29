@@ -72,7 +72,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         os.mkdir(output_bbox_dir)
 
     if not skip_detect:
-        print "Detecting..."
+        print("Detecting...")
         margin = 32
         sidelen = 144
 
@@ -92,7 +92,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     # Free up nodule detection module resources
     del nod_net.module
 
-    print "Applying case model..."
+    print("Applying case model...")
 
     casemodel = import_module(classifier_model.split('.py')[0])
     casenet = casemodel.CaseNet(topk=classifier_num_nodules_for_cancer_decision)
