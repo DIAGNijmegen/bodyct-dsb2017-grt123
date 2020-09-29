@@ -4,12 +4,36 @@ from __future__ import print_function
 
 import sys
 import os
+import shutil
 import argparse
 import subprocess
 import glob
-
+import json
+from xmlreport import LungCadReport
+from xml.etree import ElementTree
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def extract_json_report(xmlfile):
+    filename = os.path.basename(xmlfile).replace('.xml', '')
+    xmlreport = LungCadReport.from_xml(ElementTree.parse(str(xmlfile)))
+
+    report = {
+        "entity": filename,
+        "metrics": {
+            "cancer_score": float(xmlreport.cancerinfo.casecancerprobability),
+            "nodules": [dict(x=f.x, y=f.y, z=f.z,
+                             diameter_mm=f.diameter_mm,
+                             volume_mm3=f.volume_mm3,
+                             probability=f.probability,
+                             cancerprobability=f.cancerprobability)
+                        for f in xmlreport.findings],
+        },
+        "error_messages": [],
+    }
+    return report
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -41,6 +65,13 @@ if __name__ == "__main__":
         type=int,
         help="Number of GPUs to use for processing data.",
     )
+    parser.add_argument(
+        "--no-cleanup",
+        dest="cleanup",
+        action="store_false",
+        help="Disable cleanup of intermediate results "
+             "(preparation files & bounding boxes).",
+    )
 
     args = parser.parse_args()
 
@@ -54,36 +85,29 @@ if __name__ == "__main__":
     new_env["N_GPUS"] = str(args.n_gpus)
     main_input_dir = os.path.abspath(args.input_dir)
     main_output_dir = os.path.abspath(args.output_dir)
-    pattern = os.path.join(main_input_dir, "*")
-    output_dirs = []
-    is_a_directory = True
-    for candidate in glob.glob(pattern):
-        if os.path.isdir(candidate):
-            new_env["INPUT_DIR"] = os.path.abspath(candidate)
-            output_dir = os.path.join(main_output_dir, os.path.basename(candidate))
-            if not os.path.exists(output_dir):
-                os.mkdir(output_dir)
-            new_env["OUTPUT_DIR"] = os.path.abspath(output_dir)
-            output_dirs.append(new_env["OUTPUT_DIR"])
-            print(
-                "input dir = {}, output dir = {}".format(
-                    new_env["INPUT_DIR"], new_env["OUTPUT_DIR"]
-                )
-            )
-            subprocess.check_call(
-                [sys.executable, "main.py"],
-                env=new_env,
-                cwd=os.path.join(THIS_DIR, "DSB2017"),
-            )
-        else:
-            is_a_directory = False
-    if not is_a_directory:
-        new_env["INPUT_DIR"] = os.path.abspath(args.input_dir)
-        new_env["OUTPUT_DIR"] = os.path.abspath(args.output_dir)
-        subprocess.check_call(
-            [sys.executable, "main.py"],
-            env=new_env,
-            cwd=os.path.join(THIS_DIR, "DSB2017"),
-        )
+
+    new_env["INPUT_DIR"] = main_input_dir
+    new_env["OUTPUT_DIR"] = main_output_dir
+    subprocess.check_call(
+        [sys.executable, "main.py"],
+        env=new_env,
+        cwd=os.path.join(THIS_DIR, "DSB2017"),
+    )
+    print("--- Parsing result reports and writing results.json")
+    output_json = []
+    for output_xml in glob.glob(os.path.join(main_output_dir, "*.xml")):
+        print(output_xml)
+        output_json.append(extract_json_report(xmlfile=output_xml))
+
+    with open(os.path.join(args.output_dir, "results.json"), 'wb') as f:
+        json.dump(output_json, f, encoding='utf-8', indent=4)
+
+    if args.cleanup:
+        print("--- Cleanup")
+        bbox_dir = os.path.join(main_output_dir, "bbox")
+        prep_dir = os.path.join(main_output_dir, "prep")
+        for directory in [bbox_dir, prep_dir]:
+            if os.path.exists(directory):
+                shutil.rmtree(directory)
 
     print("--- Processing completed")
