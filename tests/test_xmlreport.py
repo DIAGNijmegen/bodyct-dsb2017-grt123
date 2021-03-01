@@ -80,7 +80,7 @@ def test_full_report_generation():
         seriesuid="424.35",
     )
     cancerinfo = xmlreport.CancerInfo(
-        casecancerprobability=0.5, referencenoduleids=[1, 2, 3, 4, 5]
+        casecancerprobability=0.5, referencenoduleids=[0]
     )
 
     report = xmlreport.LungCadReport(
@@ -202,7 +202,7 @@ def test_equivalence_cancerinfo(casecancerprobability, referencenoduleids):
     [
         None,
         xmlreport.CancerInfo(
-            casecancerprobability=0.5, referencenoduleids=[1, 2, 3, 4, 5]
+            casecancerprobability=0.5, referencenoduleids=[0, 1, 2, 3]
         ),
     ],
 )
