@@ -22,8 +22,8 @@ ENV GIT_COMMIT_ID=$GIT_COMMIT_ID
 # first ensure that xmlreport.py matches the md5 hash version,
 # subsequently replace the GIT_COMMIT_ID lookup function with the embeded GIT_COMMIT_ID string
 # expects line endings to be LF
-RUN echo "ecaf1db67f153ec12f7068cc84eb1da6  /home/user/DSB2017/xmlreport.py" | md5sum -c -
-RUN python -c "fn='/home/user/DSB2017/xmlreport.py'; f=open(fn, 'r'); data=f.readlines(); f.close(); data=data[:9] + ['    return \"$GIT_COMMIT_ID\"\n'] + data[14:]; f=open(fn, 'w'); f.writelines(data); f.close();"
+RUN echo "419020b0fad961904cd6f20fd4a073c9  /home/user/DSB2017/xmlreport.py" | md5sum -c -
+RUN python -c "fn='/home/user/DSB2017/xmlreport.py'; f=open(fn, 'r'); data=f.readlines(); f.close(); data=data[:10] + ['    return \"$GIT_COMMIT_ID\"\n'] + data[15:]; f=open(fn, 'w'); f.writelines(data); f.close();"
 
 USER root
 RUN chown user:user -R /home/user/DSB2017
