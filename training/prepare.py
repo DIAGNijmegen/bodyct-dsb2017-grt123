@@ -171,7 +171,7 @@ def full_prep(step1=True,step2 = True):
 
         N = len(filelist)
             #savenpy(1)
-        _=pool.map(partial_savenpy,range(N))
+        _=pool.map(partial_savenpy,list(range(N)))
         pool.close()
         pool.join()
         print('end preprocessing')
@@ -274,7 +274,7 @@ def preprocess_luna():
 
         N = len(filelist)
         #savenpy(1)
-        _=pool.map(partial_savenpy_luna,range(N))
+        _=pool.map(partial_savenpy_luna,list(range(N)))
         pool.close()
         pool.join()
     print('end preprocessing luna')
@@ -319,7 +319,7 @@ def prepare_luna():
                 id = ids[namelist.index(name)]
                 filename = '0'*(3-len(str(id)))+str(id)
                 shutil.move(os.path.join(d,f),os.path.join(luna_data,filename+f[-4:]))
-                print(os.path.join(luna_data,str(id)+f[-4:]))
+                print((os.path.join(luna_data,str(id)+f[-4:])))
 
         files = [f for f in os.listdir(luna_data) if f.endswith('mhd')]
         for file in files:
@@ -328,7 +328,7 @@ def prepare_luna():
                 id = file.split('.mhd')[0]
                 filename = '0'*(3-len(str(id)))+str(id)
                 content[-1]='ElementDataFile = '+filename+'.raw\n'
-                print(content[-1])
+                print((content[-1]))
             with open(os.path.join(luna_data,file),'w') as f:
                 f.writelines(content)
 
@@ -347,7 +347,7 @@ def prepare_luna():
                 filename = '0'*(3-len(str(id)))+str(id)
 
                 shutil.move(os.path.join(luna_segment,f),os.path.join(luna_segment,filename+lastfix))
-                print(os.path.join(luna_segment,filename+lastfix))
+                print((os.path.join(luna_segment,filename+lastfix)))
 
 
         files = [f for f in os.listdir(luna_segment) if f.endswith('mhd')]
@@ -357,7 +357,7 @@ def prepare_luna():
                 id =  file.split('.mhd')[0]
                 filename = '0'*(3-len(str(id)))+str(id)
                 content[-1]='ElementDataFile = '+filename+'.zraw\n'
-                print(content[-1])
+                print((content[-1]))
             with open(os.path.join(luna_segment,file),'w') as f:
                 f.writelines(content)
     print('end changing luna name')

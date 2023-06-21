@@ -376,7 +376,7 @@ def topkpbb(pbb, lbb, nms_th, detect_th, topk=30):
     topk = np.min([topk, len(allp)])
     tp_in_topk = np.array([i for i in range(n_tp) if i in sorting[:topk]])
     fp_in_topk = np.array(
-        [i for i in range(topk) if sorting[i] not in range(n_tp)])
+        [i for i in range(topk) if sorting[i] not in list(range(n_tp))])
     #     print(fp_in_topk)
     fn_i = np.array([i for i in range(n_tp) if i not in sorting[:topk]])
     newallp = allp[:topk]

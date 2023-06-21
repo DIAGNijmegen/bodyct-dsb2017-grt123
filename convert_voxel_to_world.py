@@ -19,8 +19,8 @@ class ConvertVoxelToWorld(object):
     def postprocessing(self):
         self.get_relative_voxel_coordinates()
         self.get_conversion_parameters()
-        for scan_idx, conversion_parameter in self._conversion_parameters.items():
-            if not all(key in conversion_parameter.keys() for key in
+        for scan_idx, conversion_parameter in list(self._conversion_parameters.items()):
+            if not all(key in list(conversion_parameter.keys()) for key in
                        ['original_origin', 'extendbox_origin',
                         'cropped_grid_shape',
                         'resampled_spacing']):
@@ -34,14 +34,14 @@ class ConvertVoxelToWorld(object):
         self.output_json()
 
     def get_relative_voxel_coordinates(self):
-        for scan_idx, cropped_rects in self._dict_of_list_of_cropped_rects.items():
+        for scan_idx, cropped_rects in list(self._dict_of_list_of_cropped_rects.items()):
             self._coordinates[scan_idx] = [
                 {voxel.format(dim): min_and_max for dim, min_and_max
-                 in boundingbox.items()} for boundingbox in
+                 in list(boundingbox.items())} for boundingbox in
                 cropped_rects]
 
     def get_conversion_parameters(self):
-        for scan_idx in self._coordinates.keys():
+        for scan_idx in list(self._coordinates.keys()):
             preprocessing_info_file = os.path.join(self._preprocessing_info_dir,
                                                    '{}_preprocessing_info.txt'.format(
                                                        scan_idx))
@@ -64,14 +64,14 @@ class ConvertVoxelToWorld(object):
                     self._conversion_parameters[
                         scan_idx] = conversion_parameter
                 except IOError:
-                    print(
-                        'Cannot read {}'.format(preprocessing_info_file))
+                    print((
+                        'Cannot read {}'.format(preprocessing_info_file)))
             else:
                 raise IOError('{} does not exist'.format(
                     preprocessing_info_file))
 
     def compute_cropped_voxel_coordinates(self):
-        for scan_idx, coords in self._coordinates.items():
+        for scan_idx, coords in list(self._coordinates.items()):
             for coord in coords:
                 coord.update({world.format(dim): [
                     c * self._conversion_parameters[scan_idx][
@@ -82,7 +82,7 @@ class ConvertVoxelToWorld(object):
                     coord[voxel.format(dim)]] for dim in dimensions})
 
     def compute_world_coordinates(self):
-        for scan_idx, coords in self._coordinates.items():
+        for scan_idx, coords in list(self._coordinates.items()):
             for coord in coords:
                 for dim in dimensions:
                     coord[world.format(dim)] = [
@@ -91,7 +91,7 @@ class ConvertVoxelToWorld(object):
                             '{}'.format(dim)] for c in
                         coord[world.format(dim)]]
 
-        for scan_idx, coords in self._coordinates.items():
+        for scan_idx, coords in list(self._coordinates.items()):
             for coord in coords:
                 world_x = [c * self._conversion_parameters[scan_idx][
                                         'rotation_matrix_x']['x'] + \

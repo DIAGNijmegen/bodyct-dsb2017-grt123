@@ -34,7 +34,7 @@ def read_json_coordinates(fname):
         data = json.load(f)
 
     r = dict()
-    for k, v in data.items():
+    for k, v in list(data.items()):
         nodlist = []
         for e in v:
             nodlist.append(dict(

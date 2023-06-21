@@ -358,7 +358,7 @@ class LabelMapping(object):
 
         if self.phase == 'train' and self.num_neg > 0:
             neg_z, neg_h, neg_w, neg_a = np.where(label[:, :, :, :, 0] == -1)
-            neg_idcs = random.sample(range(len(neg_z)),
+            neg_idcs = random.sample(list(range(len(neg_z))),
                                      min(num_neg, len(neg_z)))
             neg_z, neg_h, neg_w, neg_a = neg_z[neg_idcs], neg_h[neg_idcs], \
                                          neg_w[neg_idcs], neg_a[neg_idcs]
@@ -387,7 +387,7 @@ class LabelMapping(object):
             pos.append(idx)
             flag = False
         else:
-            idx = random.sample(range(len(iz)), 1)[0]
+            idx = random.sample(list(range(len(iz))), 1)[0]
             pos = [iz[idx], ih[idx], iw[idx], ia[idx]]
         dz = (target[0] - oz[pos[0]]) / anchors[pos[3]]
         dh = (target[1] - oh[pos[1]]) / anchors[pos[3]]
@@ -473,5 +473,5 @@ def collate(batch):
     elif isinstance(batch[0], int):
         return torch.LongTensor(batch)
     elif isinstance(batch[0], collections.Iterable):
-        transposed = zip(*batch)
+        transposed = list(zip(*batch))
         return [collate(samples) for samples in transposed]

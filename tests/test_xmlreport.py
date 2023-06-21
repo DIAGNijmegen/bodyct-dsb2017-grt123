@@ -178,7 +178,7 @@ def test_equivalence_lungcad():
 
 @pytest.mark.parametrize("casecancerprobability", [0, 0.1, 0.51, 1])
 @pytest.mark.parametrize(
-    "referencenoduleids", [tuple(), [], [1], range(6), range(1, 5)]
+    "referencenoduleids", [tuple(), [], [1], list(range(6)), list(range(1, 5))]
 )
 def test_equivalence_cancerinfo(casecancerprobability, referencenoduleids):
     cancerinfo = xmlreport.CancerInfo(

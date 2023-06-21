@@ -43,7 +43,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     if data_filter is not None:
         testsplit_original_size = len(testsplit)
         testsplit = [e for e in testsplit if re.match(data_filter, e)]
-        print("Matched {}/{} files in datapath using: {}\n{}".format(len(testsplit), testsplit_original_size, data_filter, testsplit))
+        print(("Matched {}/{} files in datapath using: {}\n{}".format(len(testsplit), testsplit_original_size, data_filter, testsplit)))
 
     # If there are no mhd or mha files and no folders in the input dir, we assume that a folder with dcm files is provided
     if not testsplit:
@@ -159,7 +159,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     if predlist.ndim == 1:
         predlist = [predlist]
 
-    nodule_cancer_probabilities = {testsplit[k]:v for k, v in nodule_cancer_probabilities.items()}
+    nodule_cancer_probabilities = {testsplit[k]:v for k, v in list(nodule_cancer_probabilities.items())}
 
     cancer_probabilities = {k: v for k, v in zip(testsplit, predlist[0].tolist())}
 
@@ -189,7 +189,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         return [dimensions, orientation, origin, voxelsize]
 
     cparams = converter._conversion_parameters
-    image_infos = {key: extract_info(cparams[key]) for key in cparams.keys()}
+    image_infos = {key: extract_info(cparams[key]) for key in list(cparams.keys())}
 
     # extract nodule confidences and compute nodule probabilities for all cases
     def sigmoid(x):
@@ -208,7 +208,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
 
     reports = []
     git_hash = xmlreport.get_current_git_hash()
-    for seriesuid, (dimensions, orientation, origin, voxelsize) in image_infos.items():
+    for seriesuid, (dimensions, orientation, origin, voxelsize) in list(image_infos.items()):
         lungcad = xmlreport.LungCad(revision=git_hash, name="grt123",
                           datetimeofexecution=execution_starttime.strftime("%m/%d/%Y %H:%M:%S"),
                           trainingset1="", trainingset2="", coordinatesystem="World",
@@ -219,7 +219,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
                               orientation=orientation,
                               patientuid="", studyuid="", seriesuid=seriesuidplain)
 
-        referencenoduleids = range(min(classifier_num_nodules_for_cancer_decision, len(nodule_probs[seriesuid])))
+        referencenoduleids = list(range(min(classifier_num_nodules_for_cancer_decision, len(nodule_probs[seriesuid]))))
         cancerinfo = xmlreport.CancerInfo(casecancerprobability=cancer_probabilities[seriesuid],
                                           referencenoduleids=referencenoduleids)
 

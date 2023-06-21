@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 import os
 import numpy as np
@@ -6,12 +6,12 @@ from scipy.ndimage.interpolation import zoom
 from scipy.ndimage.morphology import binary_dilation, generate_binary_structure
 from skimage.morphology import convex_hull_image
 from functools import partial
-from step1 import step1_python
+from .step1 import step1_python
 import warnings
 import time
 
 import multiprocessing
-import Queue
+import queue
 
 
 class ParallelProcessCallerError(Exception): pass
@@ -40,7 +40,7 @@ class ParallelProcessCaller(object):
             while True:
                 try:
                     t, self.__result = self.__queue.get(timeout=1)
-                except Queue.Empty:
+                except queue.Empty:
                     if self.proc.is_alive:
                         continue
                     else:

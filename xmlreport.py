@@ -62,9 +62,7 @@ def none_str_guard(obj):
     return obj
 
 
-class XMLGeneratable(object):
-    __metaclass__ = ABCMeta
-
+class XMLGeneratable(object, metaclass=ABCMeta):
     @abstractmethod
     def xml_element(self):
         raise NotImplementedError()

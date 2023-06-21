@@ -37,8 +37,8 @@ def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
         if 'output_feature' in config:
             if config['output_feature']:
                 isfeat = True
-        print(data.size())
-        splitlist = range(0, len(data) + 1, max(n_gpu, 1))
+        print((data.size()))
+        splitlist = list(range(0, len(data) + 1, max(n_gpu, 1)))
         if splitlist[-1] != len(data):
             splitlist.append(len(data))
         outputlist = []
@@ -88,6 +88,6 @@ def test_detect(data_loader, net, get_pbb, save_dir, config, n_gpu):
         np.save(os.path.join(save_dir, shortname + '_lbb.npy'), lbb)
     end_time = time.time()
 
-    print('elapsed time is %3.2f seconds' % (end_time - start_time))
-    print
-    print
+    print(('elapsed time is %3.2f seconds' % (end_time - start_time)))
+    print()
+    print()
