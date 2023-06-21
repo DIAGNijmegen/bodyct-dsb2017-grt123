@@ -1,6 +1,6 @@
 import pytest
 import main
-from pathlib2 import Path
+from pathlib import Path
 
 try:
     import lzma

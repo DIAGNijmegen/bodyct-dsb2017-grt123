@@ -1,5 +1,5 @@
 from test_predict import ensure_testdata_unpacked
-from pathlib2 import Path
+from pathlib import Path
 import numpy as np
 import SimpleITK as sitk
 import json
