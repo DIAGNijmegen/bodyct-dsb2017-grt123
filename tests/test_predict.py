@@ -165,13 +165,13 @@ def test_correct_top5(tmp_path,):
             marks=[
                 pytest.mark.xfail(reason="cuda out of memory"),
                 pytest.mark.skipif(
-                    not torch.cuda.is_available
-                    or torch.cuda.get_device_properties(
-                        torch.cuda.current_device()
-                    ).total_memory
-                    / 1024.0 ** 3
-                    >= 6.0,
-                    reason="cuda not available or GPU has more than 6 GB of VRAM required for test",
+                    not torch.cuda.is_available,
+                    # or torch.cuda.get_device_properties(
+                    #     torch.cuda.current_device()
+                    # ).total_memory
+                    # / 1024.0 ** 3
+                    # >= 6.0,
+                    reason="cuda not available",
                 ),
             ],
         )

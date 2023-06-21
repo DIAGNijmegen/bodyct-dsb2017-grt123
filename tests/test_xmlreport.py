@@ -236,7 +236,7 @@ def test_writing_and_reading_lungcadreports_xml(tmp_path, cancerinfo):
         lungcad, imageinfo, findings, cancerinfo=cancerinfo
     )
 
-    with open(testfile, "w") as f:
+    with open(testfile, "wb") as f:
         ET.ElementTree(report.xml_element()).write(
             f, encoding="UTF-8", xml_declaration=True
         )

@@ -6,10 +6,8 @@ import time
 import collections
 import random
 from layers import iou
-from scipy.ndimage import zoom
 import warnings
-from scipy.ndimage.interpolation import rotate
-from scipy.ndimage.morphology import binary_dilation, generate_binary_structure
+from scipy.ndimage import binary_dilation, generate_binary_structure, rotate, zoom
 
 
 class DataBowl3Detector(Dataset):

@@ -3,9 +3,8 @@ import torch
 from torch.utils.data import Dataset
 import os
 import time
-from scipy.ndimage import zoom
 import warnings
-from scipy.ndimage.interpolation import rotate
+from scipy.ndimage import rotate, zoom
 from layers import nms, iou
 
 

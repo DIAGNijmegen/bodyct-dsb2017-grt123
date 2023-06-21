@@ -20,12 +20,12 @@ def get_info(fname):
         rotation_matrix = rotmatrix,
         origin = d["original_origin"],
         spacing = d["original_spacing"],
-        shape = d["original_shape"].astype(np.int)
+        shape = d["original_shape"].astype(int)
     )
     if "cropped_grid_shape" in d:
-        info["crop_shape"] = d["cropped_grid_shape"].astype(np.int)
+        info["crop_shape"] = d["cropped_grid_shape"].astype(int)
     if "extendbox_origin" in d:
-        info["crop_origin"] = d["extendbox_origin"].astype(np.int)
+        info["crop_origin"] = d["extendbox_origin"].astype(int)
     return info
 
 
