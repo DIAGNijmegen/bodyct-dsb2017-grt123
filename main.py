@@ -21,7 +21,6 @@ import pandas
 from convert_voxel_to_world import ConvertVoxelToWorld
 
 import xmlreport
-import xml.etree.ElementTree as ET
 
 
 def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
@@ -97,7 +96,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     casemodel = import_module(classifier_model.split('.py')[0])
     casenet = casemodel.CaseNet(topk=classifier_num_nodules_for_cancer_decision)
     config2 = casemodel.config
-    checkpoint = torch.load(classifier_param)
+    checkpoint = torch.load(classifier_param, encoding="latin1")  # Uses old Python 2 pickle format using the latin1 encoding...
     casenet.load_state_dict(checkpoint['state_dict'])
 
     if use_gpu:
@@ -236,10 +235,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         report = xmlreport.LungCadReport(lungcad, imageinfo, findings, cancerinfo=cancerinfo)
 
         # output xml reports
-        with open(os.path.join(outputdir, seriesuid + ".xml"), "w") as f:
-            ET.ElementTree(report.xml_element()).write(
-                f, encoding="UTF-8", xml_declaration=True
-            )
+        report.to_file(fname=os.path.join(outputdir, seriesuid + ".xml"))
 
         reports.append(report)
 
