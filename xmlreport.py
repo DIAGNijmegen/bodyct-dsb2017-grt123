@@ -1,3 +1,4 @@
+from pathlib import Path
 import xml.etree.ElementTree as et
 from datetime import datetime
 from xml.etree import ElementTree
@@ -7,12 +8,15 @@ from abc import ABCMeta, abstractmethod
 import subprocess as sp
 
 
-def get_current_git_hash():
-    command = ['git', 'log', '-n', '1', '--pretty=format:"%H"']
-    p = sp.Popen(command, stderr=None, stdout=sp.PIPE)
-    stdout, _ = p.communicate()
-    p.stdout.close()
-    return str(stdout[1:-1].decode('utf-8'))
+def get_current_git_hash(git_dir: Path = Path(__file__).parent / ".git") -> str:
+    head_file = git_dir / "HEAD"
+    with open(str(head_file), "r") as f:
+        content = f.read().strip().split(" ")
+    if "ref:" != content[0]:
+        return content[0]
+    with open(str(git_dir / Path(content[1])), "r") as f:
+        git_hash = f.read().strip()
+    return git_hash
 
 
 class abstractstatic(staticmethod):
