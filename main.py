@@ -169,7 +169,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         df.to_csv(outputfile, index=False)
 
     if crop_rects_outputfile is not None:
-        with open(crop_rects_outputfile, 'wb') as f:
+        with open(crop_rects_outputfile, 'w') as f:
             json.dump(dataset.crop_rect_map, f, indent=4)
 
     converter = ConvertVoxelToWorld(preprocessing_info_dir=output_prep_dir,
