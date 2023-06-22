@@ -158,7 +158,7 @@ class XMLGeneratable(object):
                 tree.write(f, encoding="UTF-8", xml_declaration=True)
         elif fname.suffix == ".json":
             with open(fname, "w") as fp:
-                json.dump(obj=self.to_json(), fp=fp)
+                json.dump(obj=self.to_json(), fp=fp, indent=4)
         else:
             raise NotImplementedError(
                 f"Unsupported file suffix: {fname.suffix}, supported are: .xml, .csv"
