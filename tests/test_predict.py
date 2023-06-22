@@ -7,7 +7,6 @@ try:
 except ImportError:
     from backports import lzma
 import tarfile
-from test_xmlreport import compare_finding, compare_reports
 import xmlreport
 import numpy as np
 import torch
@@ -33,9 +32,9 @@ def ensure_testdata_unpacked(dataset="inputs"):
 def get_config(tmp_path, test_data_dir):
     cfg = {
         "detector_model": "net_detector",
-        "detector_param": "./model/detector.ckpt",
+        "detector_param": str(main.DETECTOR_PARAM_FILE),
         "classifier_model": "net_classifier",
-        "classifier_param": "./model/classifier.ckpt",
+        "classifier_param": str(main.CLASSIFIER_PARAM_FILE),
         "n_gpu": 0,
         "n_worker_preprocessing": 6,
     }
@@ -144,7 +143,7 @@ def test_correct_top5(tmp_path,):
     assert len(results_original[0].findings) < len(results_all[0].findings)
     for idx, finding in enumerate(results_original[0].findings):
         finding2 = results_all[0].findings[idx]
-        compare_finding(finding, finding2)
+        assert finding.is_similar(finding2)
 
     assert np.isclose(
         results_all[0].cancerinfo.casecancerprobability,
@@ -229,4 +228,4 @@ def test_matches_ref_report(tmp_path):
     assert len(result.findings) == 9
     ref_report.lungcad = result.lungcad
     result.findings = result.findings[:5]
-    compare_reports(ref_report, result)
+    ref_report.is_similar(result)

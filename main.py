@@ -4,6 +4,7 @@ from config_submit import config as config_submit
 import numpy as np
 import json
 import os
+from pathlib import Path
 import re
 from datetime import datetime
 import torch
@@ -23,15 +24,22 @@ from convert_voxel_to_world import ConvertVoxelToWorld
 import xmlreport
 
 
-def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
-         detector_model="net_detector", detector_param="./model/detector.ckpt",
-         classifier_model="net_classifier", classifier_param="./model/classifier.ckpt",
-         n_gpu=1, n_worker_preprocessing=6, outputfile=None,
-         crop_rects_outputfile=None, output_convert_debug_file=None,
-         use_existing_preprocessing=True, skip_preprocessing=False, skip_detect=False,
-         classifier_max_nodules_to_include=None, classifier_num_nodules_for_cancer_decision=5,
-         classifier_batch_size=20,
-         data_filter=None):
+MODEL_DIR = Path(__file__).parent / "model"
+DETECTOR_PARAM_FILE = MODEL_DIR / "detector.ckpt"
+CLASSIFIER_PARAM_FILE = MODEL_DIR / "classifier.ckpt"
+
+
+def main(
+    datapath, outputdir, output_bbox_dir, output_prep_dir,
+    detector_model="net_detector", detector_param=str(DETECTOR_PARAM_FILE),
+    classifier_model="net_classifier", classifier_param=str(CLASSIFIER_PARAM_FILE),
+    n_gpu=1, n_worker_preprocessing=6, outputfile=None,
+    crop_rects_outputfile=None, output_convert_debug_file=None,
+    use_existing_preprocessing=True, skip_preprocessing=False, skip_detect=False,
+    classifier_max_nodules_to_include=None, classifier_num_nodules_for_cancer_decision=5,
+    classifier_batch_size=20,
+    data_filter=None
+):
     execution_starttime = datetime.now()
     use_gpu = n_gpu > 0
 
