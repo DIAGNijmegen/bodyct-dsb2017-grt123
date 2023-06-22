@@ -8,6 +8,7 @@ import warnings
 import time
 
 import multiprocessing
+import multiprocessing.pool
 import queue
 
 
@@ -189,6 +190,8 @@ def savenpy(id, filelist, prep_folder, data_path, use_existing=True):
     print(name + ' done')
 
 
+# TODO As of Python 3.8, concurrent.futures.ProcessPoolExecutor doesn't have this limitation. It can have a nested process pool with no problem at all
+
 # Thanks to: http://mindcache.io/2015/08/09/python-multiprocessing-module-daemonic-processes-are-not-allowed-to-have-children.html
 class NoDaemonProcess(multiprocessing.Process):
     @property
@@ -200,11 +203,9 @@ class NoDaemonProcess(multiprocessing.Process):
         pass
 
 
-import multiprocessing.pool
-
-
 class NoDaemonContext(type(multiprocessing.get_context())):
     Process = NoDaemonProcess
+
 
 # We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
 # because the latter is only a wrapper function, not a proper class.
