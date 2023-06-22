@@ -8,6 +8,10 @@ import shutil
 from convert_voxel_to_world import ConvertVoxelToWorld
 from preprocessing.step1 import load_itk_image, load_image
 import os
+try:
+    import image_loader as diag_image_loader
+except ImportError:
+    diag_image_loader = None
 
 
 def get_info(fname):
@@ -120,22 +124,24 @@ def test_coord_relative_to_world():
             plt.close()
 
 
-def test_correct_imageinfos_are_created(tmp_path):
+@pytest.mark.parametrize("input_file_name", ("lidc-dcm", "lidc.mhd", "lidc.mha"))
+def test_correct_imageinfos_are_created(tmp_path: Path, input_file_name: str):
+    if input_file_name == "lidc-dcm" and diag_image_loader is None:
+        pytest.skip(reason="(diag-)image_loader not found, dicom is not supported for now...")
     test_data_dir = ensure_testdata_unpacked()
     prep_dir = tmp_path / "prep"
     os.makedirs(str(prep_dir))
     res_dir = Path(__file__).parent / "resources"
     mhd_file = res_dir / "inputs" / "lidc.mhd"
     image = sitk.ReadImage(str(mhd_file))
-    for f in ["lidc-dcm", "lidc.mhd", "lidc.mha"]:
-        load_image(str(test_data_dir), str(prep_dir), f)
-        info_file = prep_dir / (f + "_preprocessing_info.txt")
-        assert info_file.exists()
-        info = get_info(str(info_file))
-        assert np.allclose(info["rotation_matrix"], np.array([e for e in reversed(image.GetDirection())]).reshape((3,3)))
-        assert np.allclose(info["origin"], np.array([e for e in reversed(image.GetOrigin())]))
-        assert np.allclose(info["spacing"], np.array([e for e in reversed(image.GetSpacing())]))
-        assert np.allclose(info["shape"], np.array([e for e in reversed(image.GetSize())]))
+    load_image(str(test_data_dir), str(prep_dir), input_file_name)
+    info_file = prep_dir / (input_file_name + "_preprocessing_info.txt")
+    assert info_file.exists()
+    info = get_info(str(info_file))
+    assert np.allclose(info["rotation_matrix"], np.array([e for e in reversed(image.GetDirection())]).reshape((3,3)))
+    assert np.allclose(info["origin"], np.array([e for e in reversed(image.GetOrigin())]))
+    assert np.allclose(info["spacing"], np.array([e for e in reversed(image.GetSpacing())]))
+    assert np.allclose(info["shape"], np.array([e for e in reversed(image.GetSize())]))
 
 
 # x y z - ordering (similar to MHD headers)
