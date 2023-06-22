@@ -70,9 +70,9 @@ class DataBowl3Classifier(Dataset):
             chosenid = conf_list.argsort()[::-1][:topk]
         croplist = np.zeros([topk, 1, self.crop_size[0], self.crop_size[1],
                              self.crop_size[2]]).astype('float32')
-        coordlist = np.zeros([topk, 3, self.crop_size[0] / self.stride,
-                              self.crop_size[1] / self.stride,
-                              self.crop_size[2] / self.stride]).astype(
+        coordlist = np.zeros([topk, 3, self.crop_size[0] // self.stride,
+                              self.crop_size[1] // self.stride,
+                              self.crop_size[2] // self.stride]).astype(
             'float32')
         isnodlist = np.zeros([topk])
 
@@ -175,11 +175,11 @@ class simpleCrop():
             imgs.shape[1:])
         xx, yy, zz = np.meshgrid(
             np.linspace(normstart[0], normstart[0] + normsize[0],
-                        self.crop_size[0] / self.stride),
+                        self.crop_size[0] // self.stride),
             np.linspace(normstart[1], normstart[1] + normsize[1],
-                        self.crop_size[1] / self.stride),
+                        self.crop_size[1] // self.stride),
             np.linspace(normstart[2], normstart[2] + normsize[2],
-                        self.crop_size[2] / self.stride),
+                        self.crop_size[2] // self.stride),
             indexing='ij')
         coord = np.concatenate(
             [xx[np.newaxis, ...], yy[np.newaxis, ...], zz[np.newaxis, :]],
