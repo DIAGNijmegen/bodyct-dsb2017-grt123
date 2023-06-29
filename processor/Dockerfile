@@ -5,7 +5,7 @@ USER root
 RUN python -m pip install --upgrade --no-cache-dir pip==23.1.2
 RUN python -m pip install --upgrade --no-cache-dir scikit-image==0.21.0 scipy==1.11.1 pandas==2.0.3 SimpleITK==2.2.1
 
-# Create user
+# Create user and project folder for user
 RUN useradd -ms /bin/bash user
 RUN mkdir /home/user/DSB2017
 RUN chown user:user -R /home/user/DSB2017
@@ -39,5 +39,5 @@ FROM processor AS test
 
 USER root
 RUN pip install pytest pytest-cov
-RUN apt-get install liblzma-dev -y
+RUN apt-get update && apt-get install -y liblzma-dev && rm -rf /var/lib/apt/lists/*
 USER user
