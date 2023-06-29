@@ -3,7 +3,10 @@ import torch
 from torch.utils.data import Dataset
 import os
 import time
-import collections
+try:
+    import collections.abc as collections
+except ImportError:
+    import collections
 import random
 from layers import iou
 import warnings

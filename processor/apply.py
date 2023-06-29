@@ -1,7 +1,3 @@
-#!/usr/bin/python2
-
-
-
 import sys
 import os
 import shutil
@@ -99,8 +95,8 @@ if __name__ == "__main__":
         print(output_xml)
         output_json.append(extract_json_report(xmlfile=output_xml))
 
-    with open(os.path.join(args.output_dir, "results.json"), 'wb') as f:
-        json.dump(output_json, f, encoding='utf-8', indent=4)
+    with open(os.path.join(args.output_dir, "results.json"), 'w') as f:
+        json.dump(output_json, f, indent=4)
 
     if args.cleanup:
         print("--- Cleanup")
