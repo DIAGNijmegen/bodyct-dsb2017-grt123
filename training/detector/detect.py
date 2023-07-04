@@ -18,9 +18,9 @@ def mp_get_pr(conf_th, nms_th, detect_th, num_procs = 64):
     num_procs = int(np.ceil(float(num_samples) / split_size))
     
     manager = mp.Manager()
-    tp = manager.list(range(num_procs))
-    fp = manager.list(range(num_procs))
-    p = manager.list(range(num_procs))
+    tp = manager.list(list(range(num_procs)))
+    fp = manager.list(list(range(num_procs)))
+    p = manager.list(list(range(num_procs)))
     procs = []
     for pid in range(num_procs):
         proc = mp.Process(
@@ -40,7 +40,7 @@ def mp_get_pr(conf_th, nms_th, detect_th, num_procs = 64):
     p = np.sum(p)
     
     end_time = time.time()
-    print('conf_th %1.1f, nms_th %1.1f, detect_th %1.1f, tp %d, fp %d, p %d, recall %f, time %3.2f' % (conf_th, nms_th, detect_th, tp, fp, p, float(tp) / p, end_time - start_time))
+    print(('conf_th %1.1f, nms_th %1.1f, detect_th %1.1f, tp %d, fp %d, p %d, recall %f, time %3.2f' % (conf_th, nms_th, detect_th, tp, fp, p, float(tp) / p, end_time - start_time)))
 
 def get_pr(pbb, lbb, conf_th, nms_th, detect_th, pid, tp_list, fp_list, p_list):
     tp, fp, p = 0, 0, 0

@@ -4,6 +4,7 @@ from config_submit import config as config_submit
 import numpy as np
 import json
 import os
+from pathlib import Path
 import re
 from datetime import datetime
 import torch
@@ -21,18 +22,24 @@ import pandas
 from convert_voxel_to_world import ConvertVoxelToWorld
 
 import xmlreport
-import xml.etree.ElementTree as ET
 
 
-def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
-         detector_model="net_detector", detector_param="./model/detector.ckpt",
-         classifier_model="net_classifier", classifier_param="./model/classifier.ckpt",
-         n_gpu=1, n_worker_preprocessing=6, outputfile=None,
-         crop_rects_outputfile=None, output_convert_debug_file=None,
-         use_existing_preprocessing=True, skip_preprocessing=False, skip_detect=False,
-         classifier_max_nodules_to_include=None, classifier_num_nodules_for_cancer_decision=5,
-         classifier_batch_size=20,
-         data_filter=None):
+MODEL_DIR = Path(__file__).parent / "model"
+DETECTOR_PARAM_FILE = MODEL_DIR / "detector.ckpt"
+CLASSIFIER_PARAM_FILE = MODEL_DIR / "classifier.ckpt"
+
+
+def main(
+    datapath, outputdir, output_bbox_dir, output_prep_dir,
+    detector_model="net_detector", detector_param=str(DETECTOR_PARAM_FILE),
+    classifier_model="net_classifier", classifier_param=str(CLASSIFIER_PARAM_FILE),
+    n_gpu=1, n_worker_preprocessing=6, outputfile=None,
+    crop_rects_outputfile=None, output_convert_debug_file=None,
+    use_existing_preprocessing=True, skip_preprocessing=False, skip_detect=False,
+    classifier_max_nodules_to_include=None, classifier_num_nodules_for_cancer_decision=5,
+    classifier_batch_size=20,
+    data_filter=None
+):
     execution_starttime = datetime.now()
     use_gpu = n_gpu > 0
 
@@ -43,7 +50,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     if data_filter is not None:
         testsplit_original_size = len(testsplit)
         testsplit = [e for e in testsplit if re.match(data_filter, e)]
-        print("Matched {}/{} files in datapath using: {}\n{}".format(len(testsplit), testsplit_original_size, data_filter, testsplit))
+        print(("Matched {}/{} files in datapath using: {}\n{}".format(len(testsplit), testsplit_original_size, data_filter, testsplit)))
 
     # If there are no mhd or mha files and no folders in the input dir, we assume that a folder with dcm files is provided
     if not testsplit:
@@ -97,7 +104,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     casemodel = import_module(classifier_model.split('.py')[0])
     casenet = casemodel.CaseNet(topk=classifier_num_nodules_for_cancer_decision)
     config2 = casemodel.config
-    checkpoint = torch.load(classifier_param)
+    checkpoint = torch.load(classifier_param, encoding="latin1")  # Uses old Python 2 pickle format using the latin1 encoding...
     casenet.load_state_dict(checkpoint['state_dict'])
 
     if use_gpu:
@@ -159,7 +166,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
     if predlist.ndim == 1:
         predlist = [predlist]
 
-    nodule_cancer_probabilities = {testsplit[k]:v for k, v in nodule_cancer_probabilities.items()}
+    nodule_cancer_probabilities = {testsplit[k]:v for k, v in list(nodule_cancer_probabilities.items())}
 
     cancer_probabilities = {k: v for k, v in zip(testsplit, predlist[0].tolist())}
 
@@ -170,7 +177,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         df.to_csv(outputfile, index=False)
 
     if crop_rects_outputfile is not None:
-        with open(crop_rects_outputfile, 'wb') as f:
+        with open(crop_rects_outputfile, 'w') as f:
             json.dump(dataset.crop_rect_map, f, indent=4)
 
     converter = ConvertVoxelToWorld(preprocessing_info_dir=output_prep_dir,
@@ -189,7 +196,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         return [dimensions, orientation, origin, voxelsize]
 
     cparams = converter._conversion_parameters
-    image_infos = {key: extract_info(cparams[key]) for key in cparams.keys()}
+    image_infos = {key: extract_info(cparams[key]) for key in list(cparams.keys())}
 
     # extract nodule confidences and compute nodule probabilities for all cases
     def sigmoid(x):
@@ -208,7 +215,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
 
     reports = []
     git_hash = xmlreport.get_current_git_hash()
-    for seriesuid, (dimensions, orientation, origin, voxelsize) in image_infos.items():
+    for seriesuid, (dimensions, orientation, origin, voxelsize) in list(image_infos.items()):
         lungcad = xmlreport.LungCad(revision=git_hash, name="grt123",
                           datetimeofexecution=execution_starttime.strftime("%m/%d/%Y %H:%M:%S"),
                           trainingset1="", trainingset2="", coordinatesystem="World",
@@ -219,7 +226,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
                               orientation=orientation,
                               patientuid="", studyuid="", seriesuid=seriesuidplain)
 
-        referencenoduleids = range(min(classifier_num_nodules_for_cancer_decision, len(nodule_probs[seriesuid])))
+        referencenoduleids = list(range(min(classifier_num_nodules_for_cancer_decision, len(nodule_probs[seriesuid]))))
         cancerinfo = xmlreport.CancerInfo(casecancerprobability=cancer_probabilities[seriesuid],
                                           referencenoduleids=referencenoduleids)
 
@@ -236,10 +243,7 @@ def main(datapath, outputdir, output_bbox_dir, output_prep_dir,
         report = xmlreport.LungCadReport(lungcad, imageinfo, findings, cancerinfo=cancerinfo)
 
         # output xml reports
-        with open(os.path.join(outputdir, seriesuid + ".xml"), "w") as f:
-            ET.ElementTree(report.xml_element()).write(
-                f, encoding="UTF-8", xml_declaration=True
-            )
+        report.to_file(fname=os.path.join(outputdir, seriesuid + ".xml"))
 
         reports.append(report)
 

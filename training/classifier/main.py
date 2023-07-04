@@ -181,7 +181,7 @@ def main():
         df.to_csv('stage2_ans.csv',index=False)
         return
     print(save_dir)
-    print(args.save_freq)
+    print((args.save_freq))
     trainsplit = np.load('kaggleluna_full.npy')
     valsplit = np.load('valsplit.npy')
     testsplit = np.load('test.npy')
@@ -232,7 +232,7 @@ def main():
 
         if epoch % args.save_freq == 0:            
             state_dict = case_net.module.state_dict()
-            for key in state_dict.keys():
+            for key in list(state_dict.keys()):
                 state_dict[key] = state_dict[key].cpu()
 
             torch.save({

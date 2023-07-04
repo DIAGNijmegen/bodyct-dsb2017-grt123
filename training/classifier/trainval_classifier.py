@@ -84,8 +84,8 @@ def train_casenet(epoch,model,data_loader,optimizer,args):
     mean_loss2 = np.sum(loss2Hist*lenHist)/np.sum(lenHist)
     mean_missloss = np.sum(missHist*lenHist)/np.sum(lenHist)
     mean_acc = np.sum(accHist*lenHist)/np.sum(lenHist)
-    print('Train, epoch %d, loss2 %.4f, miss loss %.4f, acc %.4f, tpn %d, fpn %d, fnn %d, time %3.2f, lr % .5f '
-          %(epoch,mean_loss2,mean_missloss,mean_acc,tpn,fpn, fnn, endtime-starttime,lr))
+    print(('Train, epoch %d, loss2 %.4f, miss loss %.4f, acc %.4f, tpn %d, fpn %d, fnn %d, time %3.2f, lr % .5f '
+          %(epoch,mean_loss2,mean_missloss,mean_acc,tpn,fpn, fnn, endtime-starttime,lr)))
 
 def val_casenet(epoch,model,data_loader,args):
     model.eval()
@@ -134,8 +134,8 @@ def val_casenet(epoch,model,data_loader,args):
     mean_loss2 = np.sum(loss2Hist*lenHist)/np.sum(lenHist)
     mean_missloss = np.sum(missHist*lenHist)/np.sum(lenHist)
     mean_acc = np.sum(accHist*lenHist)/np.sum(lenHist)
-    print('Valid, epoch %d, loss2 %.4f, miss loss %.4f, acc %.4f, tpn %d, fpn %d, fnn %d,  time %3.2f'
-          %(epoch,mean_loss2,mean_missloss,mean_acc,tpn,fpn, fnn, endtime-starttime))
+    print(('Valid, epoch %d, loss2 %.4f, miss loss %.4f, acc %.4f, tpn %d, fpn %d, fnn %d,  time %3.2f'
+          %(epoch,mean_loss2,mean_missloss,mean_acc,tpn,fpn, fnn, endtime-starttime)))
 
     
 def test_casenet(model,testset):
