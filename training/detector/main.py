@@ -192,7 +192,7 @@ def train(data_loader, net, loss, epoch, optimizer, get_lr, save_freq, save_dir)
 
     if epoch % args.save_freq == 0:            
         state_dict = net.module.state_dict()
-        for key in state_dict.keys():
+        for key in list(state_dict.keys()):
             state_dict[key] = state_dict[key].cpu()
             
         torch.save({
@@ -205,21 +205,21 @@ def train(data_loader, net, loss, epoch, optimizer, get_lr, save_freq, save_dir)
     end_time = time.time()
 
     metrics = np.asarray(metrics, np.float32)
-    print('Epoch %03d (lr %.5f)' % (epoch, lr))
-    print('Train:      tpr %3.2f, tnr %3.2f, total pos %d, total neg %d, time %3.2f' % (
+    print(('Epoch %03d (lr %.5f)' % (epoch, lr)))
+    print(('Train:      tpr %3.2f, tnr %3.2f, total pos %d, total neg %d, time %3.2f' % (
         100.0 * np.sum(metrics[:, 6]) / np.sum(metrics[:, 7]),
         100.0 * np.sum(metrics[:, 8]) / np.sum(metrics[:, 9]),
         np.sum(metrics[:, 7]),
         np.sum(metrics[:, 9]),
-        end_time - start_time))
-    print('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
+        end_time - start_time)))
+    print(('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
         np.mean(metrics[:, 0]),
         np.mean(metrics[:, 1]),
         np.mean(metrics[:, 2]),
         np.mean(metrics[:, 3]),
         np.mean(metrics[:, 4]),
-        np.mean(metrics[:, 5])))
-    print
+        np.mean(metrics[:, 5]))))
+    print()
 
 def validate(data_loader, net, loss):
     start_time = time.time()
@@ -240,21 +240,21 @@ def validate(data_loader, net, loss):
     end_time = time.time()
 
     metrics = np.asarray(metrics, np.float32)
-    print('Validation: tpr %3.2f, tnr %3.8f, total pos %d, total neg %d, time %3.2f' % (
+    print(('Validation: tpr %3.2f, tnr %3.8f, total pos %d, total neg %d, time %3.2f' % (
         100.0 * np.sum(metrics[:, 6]) / np.sum(metrics[:, 7]),
         100.0 * np.sum(metrics[:, 8]) / np.sum(metrics[:, 9]),
         np.sum(metrics[:, 7]),
         np.sum(metrics[:, 9]),
-        end_time - start_time))
-    print('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
+        end_time - start_time)))
+    print(('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
         np.mean(metrics[:, 0]),
         np.mean(metrics[:, 1]),
         np.mean(metrics[:, 2]),
         np.mean(metrics[:, 3]),
         np.mean(metrics[:, 4]),
-        np.mean(metrics[:, 5])))
-    print
-    print
+        np.mean(metrics[:, 5]))))
+    print()
+    print()
 
 def test(data_loader, net, get_pbb, save_dir, config):
     start_time = time.time()
@@ -278,8 +278,8 @@ def test(data_loader, net, get_pbb, save_dir, config):
             if config['output_feature']:
                 isfeat = True
         n_per_run = args.n_test
-        print(data.size())
-        splitlist = range(0,len(data)+1,n_per_run)
+        print((data.size()))
+        splitlist = list(range(0,len(data)+1,n_per_run))
         if splitlist[-1]!=len(data):
             splitlist.append(len(data))
         outputlist = []
@@ -315,16 +315,16 @@ def test(data_loader, net, get_pbb, save_dir, config):
     end_time = time.time()
 
 
-    print('elapsed time is %3.2f seconds' % (end_time - start_time))
-    print
-    print
+    print(('elapsed time is %3.2f seconds' % (end_time - start_time)))
+    print()
+    print()
 
 def singletest(data,net,config,splitfun,combinefun,n_per_run,margin = 64,isfeat=False):
     z, h, w = data.size(2), data.size(3), data.size(4)
-    print(data.size())
+    print((data.size()))
     data = splitfun(data,config['max_stride'],margin)
     data = Variable(data.cuda(async = True), volatile = True,requires_grad=False)
-    splitlist = range(0,args.split+1,n_per_run)
+    splitlist = list(range(0,args.split+1,n_per_run))
     outputlist = []
     featurelist = []
     for i in range(len(splitlist)-1):

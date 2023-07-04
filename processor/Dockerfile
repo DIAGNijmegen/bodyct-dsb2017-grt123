@@ -1,11 +1,15 @@
-FROM doduo1.umcn.nl/uokbaseimage/tensorflow_pytorch_diag_dicomloader_python2:2 AS processor
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime AS processor
 
-# Install the Python environment
+# Install the additional Python dependencies
 USER root
-COPY ["processor/Pipfile", "processor/Pipfile.lock", "/home/user/"]
+RUN python -m pip install --upgrade --no-cache-dir pip==23.1.2
+RUN python -m pip install --upgrade --no-cache-dir scikit-image==0.21.0 scipy==1.11.1 pandas==2.0.3 SimpleITK==2.2.1
+
+# Create user and project folder for user
+RUN useradd -ms /bin/bash user
+RUN mkdir /home/user/DSB2017
+RUN chown user:user -R /home/user/DSB2017
 WORKDIR /home/user
-RUN LC_ALL=C.UTF-8 pip install pipenv
-RUN LC_ALL=C.UTF-8 pipenv --python 2.7 install --system && rm -rf /root/.cache
 
 # Copy the model and code
 USER user
@@ -15,40 +19,25 @@ COPY ["*.py", "/home/user/DSB2017/"]
 COPY ["xmlreport.py", "/home/user/"]
 COPY ["processor/apply.py", "/home/user/"]
 
-ARG GIT_COMMIT_ID=unspecified
 # Set the ENV GIT_COMMIT_ID so that python can use this to insert in the xmlreport.py
+ARG GIT_COMMIT_ID=unspecified
 ENV GIT_COMMIT_ID=$GIT_COMMIT_ID
 
 # first ensure that xmlreport.py matches the md5 hash version,
-# subsequently replace the GIT_COMMIT_ID lookup function with the embeded GIT_COMMIT_ID string
+# subsequently set the GIT_COMMIT_ID in an artificial git folder for lookup
 # expects line endings to be LF
-RUN echo "419020b0fad961904cd6f20fd4a073c9  /home/user/DSB2017/xmlreport.py" | md5sum -c -
-RUN python -c "fn='/home/user/DSB2017/xmlreport.py'; f=open(fn, 'r'); data=f.readlines(); f.close(); data=data[:10] + ['    return \"$GIT_COMMIT_ID\"\n'] + data[15:]; f=open(fn, 'w'); f.writelines(data); f.close();"
+RUN echo "473fe3ab2d87a6f06f569c04ecf5f0c2  /home/user/DSB2017/xmlreport.py" | md5sum -c -
+RUN mkdir /home/user/DSB2017/.git && echo "$GIT_COMMIT_ID" > /home/user/DSB2017/.git/HEAD
+ENTRYPOINT ["python", "apply.py", "--n-gpus=1", "--n-cpus=8"]
 
-USER root
-RUN chown user:user -R /home/user/DSB2017
-
-USER user
-ENTRYPOINT ["/usr/bin/python2", "apply.py", "--n-gpus=1", "--n-cpus=8"]
-
+# Set some labels
 LABEL nl.diagnijmegen.rse.algorithm.name=grt123
-LABEL nl.diagnijmegen.rse.algorithm.ticket=8765
-
-LABEL nl.diagnijmegen.rse.algorithm.hardware.cpu.count=8
-LABEL nl.diagnijmegen.rse.algorithm.hardware.cpu.capabilities=""
-LABEL nl.diagnijmegen.rse.algorithm.hardware.memory=30G
-LABEL nl.diagnijmegen.rse.algorithm.hardware.gpu.count=1
-LABEL nl.diagnijmegen.rse.algorithm.hardware.gpu.cuda_compute_capability=""
-LABEL nl.diagnijmegen.rse.algorithm.hardware.gpu.memory=4G
-
 LABEL nl.diagnijmegen.rse.algorithm.git_commit_id=$GIT_COMMIT_ID
-
 
 
 FROM processor AS test
 
 USER root
-RUN pip install pytest pytest-cov tox twine
-RUN apt-get install liblzma-dev -y
-RUN pip install backports.lzma
+RUN pip install pytest pytest-cov
+RUN apt-get update && apt-get install -y liblzma-dev && rm -rf /var/lib/apt/lists/*
 USER user

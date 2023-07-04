@@ -3,13 +3,14 @@ import torch
 from torch.utils.data import Dataset
 import os
 import time
-import collections
+try:
+    import collections.abc as collections
+except ImportError:
+    import collections
 import random
 from layers import iou
-from scipy.ndimage import zoom
 import warnings
-from scipy.ndimage.interpolation import rotate
-from scipy.ndimage.morphology import binary_dilation, generate_binary_structure
+from scipy.ndimage import binary_dilation, generate_binary_structure, rotate, zoom
 
 
 class DataBowl3Detector(Dataset):
@@ -140,18 +141,18 @@ class DataBowl3Detector(Dataset):
                           [[0, 0], [0, pz - nz], [0, ph - nh], [0, pw - nw]],
                           'constant', constant_values=self.pad_value)
             xx, yy, zz = np.meshgrid(
-                np.linspace(-0.5, 0.5, imgs.shape[1] / self.stride),
-                np.linspace(-0.5, 0.5, imgs.shape[2] / self.stride),
-                np.linspace(-0.5, 0.5, imgs.shape[3] / self.stride),
+                np.linspace(-0.5, 0.5, imgs.shape[1] // self.stride),
+                np.linspace(-0.5, 0.5, imgs.shape[2] // self.stride),
+                np.linspace(-0.5, 0.5, imgs.shape[3] // self.stride),
                 indexing='ij')
             coord = np.concatenate(
                 [xx[np.newaxis, ...], yy[np.newaxis, ...], zz[np.newaxis, :]],
                 0).astype('float32')
             imgs, nzhw = self.split_comber.split(imgs)
             coord2, nzhw2 = self.split_comber.split(coord,
-                                                    side_len=self.split_comber.side_len / self.stride,
-                                                    max_stride=self.split_comber.max_stride / self.stride,
-                                                    margin=self.split_comber.margin / self.stride)
+                                                    side_len=self.split_comber.side_len // self.stride,
+                                                    max_stride=self.split_comber.max_stride // self.stride,
+                                                    margin=self.split_comber.margin // self.stride)
             assert np.all(nzhw == nzhw2)
             imgs = (imgs.astype(np.float32) - 128) / 128
             return torch.from_numpy(
@@ -267,11 +268,11 @@ class Crop(object):
             imgs.shape[1:])
         xx, yy, zz = np.meshgrid(
             np.linspace(normstart[0], normstart[0] + normsize[0],
-                        self.crop_size[0] / self.stride),
+                        self.crop_size[0] // self.stride),
             np.linspace(normstart[1], normstart[1] + normsize[1],
-                        self.crop_size[1] / self.stride),
+                        self.crop_size[1] // self.stride),
             np.linspace(normstart[2], normstart[2] + normsize[2],
-                        self.crop_size[2] / self.stride), indexing='ij')
+                        self.crop_size[2] // self.stride), indexing='ij')
         coord = np.concatenate(
             [xx[np.newaxis, ...], yy[np.newaxis, ...], zz[np.newaxis, :]],
             0).astype('float32')
@@ -335,7 +336,7 @@ class LabelMapping(object):
         output_size = []
         for i in range(3):
             assert (input_size[i] % stride == 0)
-            output_size.append(input_size[i] / stride)
+            output_size.append(input_size[i] // stride)
 
         label = np.zeros(output_size + [len(anchors), 5], np.float32)
         offset = ((stride.astype('float')) - 1) / 2
@@ -358,7 +359,7 @@ class LabelMapping(object):
 
         if self.phase == 'train' and self.num_neg > 0:
             neg_z, neg_h, neg_w, neg_a = np.where(label[:, :, :, :, 0] == -1)
-            neg_idcs = random.sample(range(len(neg_z)),
+            neg_idcs = random.sample(list(range(len(neg_z))),
                                      min(num_neg, len(neg_z)))
             neg_z, neg_h, neg_w, neg_a = neg_z[neg_idcs], neg_h[neg_idcs], \
                                          neg_w[neg_idcs], neg_a[neg_idcs]
@@ -387,11 +388,11 @@ class LabelMapping(object):
             pos.append(idx)
             flag = False
         else:
-            idx = random.sample(range(len(iz)), 1)[0]
+            idx = random.sample(list(range(len(iz))), 1)[0]
             pos = [iz[idx], ih[idx], iw[idx], ia[idx]]
-        dz = (target[0] - oz[pos[0]]) / anchors[pos[3]]
-        dh = (target[1] - oh[pos[1]]) / anchors[pos[3]]
-        dw = (target[2] - ow[pos[2]]) / anchors[pos[3]]
+        dz = (target[0] - oz[pos[0]]) // anchors[pos[3]]
+        dh = (target[1] - oh[pos[1]]) // anchors[pos[3]]
+        dw = (target[2] - ow[pos[2]]) // anchors[pos[3]]
         dd = np.log(target[3] / anchors[pos[3]])
         label[pos[0], pos[1], pos[2], pos[3], :] = [1, dz, dh, dw, dd]
         return label
@@ -473,5 +474,5 @@ def collate(batch):
     elif isinstance(batch[0], int):
         return torch.LongTensor(batch)
     elif isinstance(batch[0], collections.Iterable):
-        transposed = zip(*batch)
+        transposed = list(zip(*batch))
         return [collate(samples) for samples in transposed]

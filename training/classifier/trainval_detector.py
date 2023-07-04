@@ -55,21 +55,21 @@ def train_nodulenet(data_loader, net, loss, epoch, optimizer, args):
     end_time = time.time()
 
     metrics = np.asarray(metrics, np.float32)
-    print('Epoch %03d (lr %.5f)' % (epoch, lr))
-    print('Train:      tpr %3.2f, tnr %3.2f, total pos %d, total neg %d, time %3.2f' % (
+    print(('Epoch %03d (lr %.5f)' % (epoch, lr)))
+    print(('Train:      tpr %3.2f, tnr %3.2f, total pos %d, total neg %d, time %3.2f' % (
         100.0 * np.sum(metrics[:, 6]) / np.sum(metrics[:, 7]),
         100.0 * np.sum(metrics[:, 8]) / np.sum(metrics[:, 9]),
         np.sum(metrics[:, 7]),
         np.sum(metrics[:, 9]),
-        end_time - start_time))
-    print('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
+        end_time - start_time)))
+    print(('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
         np.mean(metrics[:, 0]),
         np.mean(metrics[:, 1]),
         np.mean(metrics[:, 2]),
         np.mean(metrics[:, 3]),
         np.mean(metrics[:, 4]),
-        np.mean(metrics[:, 5])))
-    print
+        np.mean(metrics[:, 5]))))
+    print()
 
 def validate_nodulenet(data_loader, net, loss):
     start_time = time.time()
@@ -90,21 +90,21 @@ def validate_nodulenet(data_loader, net, loss):
     end_time = time.time()
 
     metrics = np.asarray(metrics, np.float32)
-    print('Validation: tpr %3.2f, tnr %3.8f, total pos %d, total neg %d, time %3.2f' % (
+    print(('Validation: tpr %3.2f, tnr %3.8f, total pos %d, total neg %d, time %3.2f' % (
         100.0 * np.sum(metrics[:, 6]) / np.sum(metrics[:, 7]),
         100.0 * np.sum(metrics[:, 8]) / np.sum(metrics[:, 9]),
         np.sum(metrics[:, 7]),
         np.sum(metrics[:, 9]),
-        end_time - start_time))
-    print('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
+        end_time - start_time)))
+    print(('loss %2.4f, classify loss %2.4f, regress loss %2.4f, %2.4f, %2.4f, %2.4f' % (
         np.mean(metrics[:, 0]),
         np.mean(metrics[:, 1]),
         np.mean(metrics[:, 2]),
         np.mean(metrics[:, 3]),
         np.mean(metrics[:, 4]),
-        np.mean(metrics[:, 5])))
-    print
-    print
+        np.mean(metrics[:, 5]))))
+    print()
+    print()
 
 def test_nodulenet(data_loader, net, get_pbb, save_dir, config, n_per_run):
     start_time = time.time()
@@ -126,8 +126,8 @@ def test_nodulenet(data_loader, net, get_pbb, save_dir, config, n_per_run):
         if 'output_feature' in config:
             if config['output_feature']:
                 isfeat = True
-        print(data.size())
-        splitlist = range(0,len(data)+1,n_per_run)
+        print((data.size()))
+        splitlist = list(range(0,len(data)+1,n_per_run))
         if splitlist[-1]!=len(data):
             splitlist.append(len(data))
         outputlist = []
@@ -152,6 +152,6 @@ def test_nodulenet(data_loader, net, get_pbb, save_dir, config, n_per_run):
     end_time = time.time()
 
 
-    print('elapsed time is %3.2f seconds' % (end_time - start_time))
-    print
-    print
+    print(('elapsed time is %3.2f seconds' % (end_time - start_time)))
+    print()
+    print()

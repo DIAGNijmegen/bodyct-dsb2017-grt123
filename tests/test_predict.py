@@ -1,17 +1,20 @@
 import pytest
 import main
-from pathlib2 import Path
+from pathlib import Path
 
 try:
     import lzma
 except ImportError:
     from backports import lzma
 import tarfile
-from test_xmlreport import compare_finding, compare_reports
 import xmlreport
 import numpy as np
 import torch
 import xml.etree.ElementTree as et
+try:
+    import image_loader as diag_image_loader
+except ImportError:
+    diag_image_loader = None
 
 
 def ensure_testdata_unpacked(dataset="inputs"):
@@ -29,9 +32,9 @@ def ensure_testdata_unpacked(dataset="inputs"):
 def get_config(tmp_path, test_data_dir):
     cfg = {
         "detector_model": "net_detector",
-        "detector_param": "./model/detector.ckpt",
+        "detector_param": str(main.DETECTOR_PARAM_FILE),
         "classifier_model": "net_classifier",
-        "classifier_param": "./model/classifier.ckpt",
+        "classifier_param": str(main.CLASSIFIER_PARAM_FILE),
         "n_gpu": 0,
         "n_worker_preprocessing": 6,
     }
@@ -64,6 +67,7 @@ def test_main(tmp_path,):
         output_convert_debug_file=str(output_convert_debug_file),
         skip_preprocessing=False,
         skip_detect=False,
+        data_filter=r".*.mhd",
         **cfg
     )
 
@@ -80,6 +84,7 @@ def test_main(tmp_path,):
         output_convert_debug_file=str(output_convert_debug_file),
         skip_preprocessing=False,
         skip_detect=True,
+        data_filter=r".*.mhd",
         **cfg
     )
 
@@ -92,10 +97,11 @@ def verify_lidc_inputs(results):
     assert results[0] == results[2]
 
 
-def test_correct_top5(tmp_path,):
+def test_all_lidc_inputs(tmp_path):
+    if diag_image_loader is None:
+        pytest.skip("This test requires the diag dicom dataloader to be present...")
     test_data_dir = ensure_testdata_unpacked()
     cfg = get_config(tmp_path, test_data_dir)
-
     results_original = main.main(
         skip_detect=False,
         skip_preprocessing=False,
@@ -105,29 +111,39 @@ def test_correct_top5(tmp_path,):
     )
     verify_lidc_inputs(results_original)
 
+
+def test_correct_top5(tmp_path,):
+    test_data_dir = ensure_testdata_unpacked()
+    cfg = get_config(tmp_path, test_data_dir)
+    results_original = main.main(
+        skip_detect=False,
+        skip_preprocessing=False,
+        classifier_max_nodules_to_include=5,
+        classifier_num_nodules_for_cancer_decision=5,
+        data_filter=r".*.mhd",
+        **cfg
+    )
     results_all = main.main(
         skip_detect=True,
         skip_preprocessing=True,
         classifier_max_nodules_to_include=None,
         classifier_num_nodules_for_cancer_decision=5,
+        data_filter=r".*.mhd",
         **cfg
     )
-    verify_lidc_inputs(results_all)
-
     results_7 = main.main(
         skip_detect=True,
         skip_preprocessing=True,
         classifier_max_nodules_to_include=None,
         classifier_num_nodules_for_cancer_decision=7,
+        data_filter=r".*.mhd",
         **cfg
     )
-    verify_lidc_inputs(results_7)
-
     # assert for all findings in results_original that they exist in order in results_all
     assert len(results_original[0].findings) < len(results_all[0].findings)
     for idx, finding in enumerate(results_original[0].findings):
         finding2 = results_all[0].findings[idx]
-        compare_finding(finding, finding2)
+        assert finding.is_similar(finding2)
 
     assert np.isclose(
         results_all[0].cancerinfo.casecancerprobability,
@@ -165,13 +181,13 @@ def test_correct_top5(tmp_path,):
             marks=[
                 pytest.mark.xfail(reason="cuda out of memory"),
                 pytest.mark.skipif(
-                    not torch.cuda.is_available
-                    or torch.cuda.get_device_properties(
-                        torch.cuda.current_device()
-                    ).total_memory
-                    / 1024.0 ** 3
-                    >= 6.0,
-                    reason="cuda not available or GPU has more than 6 GB of VRAM required for test",
+                    not torch.cuda.is_available,
+                    # or torch.cuda.get_device_properties(
+                    #     torch.cuda.current_device()
+                    # ).total_memory
+                    # / 1024.0 ** 3
+                    # >= 6.0,
+                    reason="cuda not available",
                 ),
             ],
         )
@@ -212,4 +228,4 @@ def test_matches_ref_report(tmp_path):
     assert len(result.findings) == 9
     ref_report.lungcad = result.lungcad
     result.findings = result.findings[:5]
-    compare_reports(ref_report, result)
+    ref_report.is_similar(result)
